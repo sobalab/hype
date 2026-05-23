@@ -55,16 +55,10 @@ export function Filters({
   onSetRound,
   onReset,
 }: Props) {
-  // Collapsible at every breakpoint. Default closed (matches SSR + mobile UX);
-  // an effect flips it open after mount on md+ so desktop lands with filters
-  // visible. Once the user toggles, we respect their choice.
+  // Collapsible at every breakpoint. Always starts closed so route navigation
+  // doesn't reopen the panel — a pulsing dot on the toggle button signals it's
+  // interactive instead.
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      setOpen(true);
-    }
-  }, []);
   // The grid-rows expand/collapse trick needs overflow-hidden on the immediate
   // grid child during animation, but that also clips the absolutely-positioned
   // Round dropdown menu (which extends past the filter panel's bottom border).
@@ -83,10 +77,10 @@ export function Filters({
       }}
     >
       <div
-        className="mx-auto flex max-w-[1440px] flex-col"
+        className="mx-auto flex max-w-[1180px] flex-col"
         style={{
           paddingBlock: "1.5rem",
-          paddingInline: "clamp(1rem, 3vw, 1.75rem)",
+          paddingInline: "clamp(1.25rem, 4vw, 2rem)",
         }}
       >
         {/* Master toggle — visible at every breakpoint. Stretches full-width
@@ -98,7 +92,18 @@ export function Filters({
           aria-controls="hyp3-filter-panel"
           className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-core-bright/40 bg-bg-2/95 px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.12em] text-core-bright shadow-[0_8px_32px_-4px_rgba(0,0,0,0.6),0_0_0_3px_rgba(114,184,255,0.08)] backdrop-blur transition-all hover:bg-bg-2 hover:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.7),0_0_0_4px_rgba(114,184,255,0.14)] md:min-h-9 md:w-auto md:self-start md:px-3 md:py-1"
         >
-          <span>Filters</span>
+          <span className="inline-flex items-center gap-2">
+            {!open && (
+              <span
+                aria-hidden
+                className="relative inline-flex size-2 shrink-0"
+              >
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-core-bright opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-core-bright shadow-[0_0_8px_var(--core-bright)]" />
+              </span>
+            )}
+            Filters
+          </span>
           {open ? (
             <ChevronUp aria-hidden className="size-4 text-core-bright" />
           ) : (
