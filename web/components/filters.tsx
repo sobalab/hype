@@ -70,10 +70,10 @@ export function Filters({
 
   return (
     <div
-      className={`sticky top-[var(--hyp3-nav-h,0px)] z-30 border-y-[1.5px] bg-bg shadow-[0_12px_32px_-12px_rgba(255,255,255,0.12)] transition-[transform,border-color] duration-300 ease-in-out ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
+      className={`sticky top-[var(--hyp3-nav-h,0px)] z-30 border-y-[1.5px] bg-bg shadow-[0_10px_28px_-16px_rgba(0,0,0,0.7)] transition-[transform,border-color] duration-300 ease-in-out ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
       style={{
-        borderTopColor: open ? "var(--brand)" : "transparent",
-        borderBottomColor: open ? "var(--brand)" : "var(--border)",
+        borderTopColor: open ? "var(--border-hi)" : "transparent",
+        borderBottomColor: open ? "var(--border-hi)" : "var(--border)",
       }}
     >
       <div
@@ -90,7 +90,7 @@ export function Filters({
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="hyp3-filter-panel"
-          className="inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-core-bright/40 bg-bg-2/95 px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.12em] text-core-bright shadow-[0_8px_32px_-4px_rgba(0,0,0,0.6),0_0_0_3px_rgba(114,184,255,0.08)] backdrop-blur transition-all hover:bg-bg-2 hover:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.7),0_0_0_4px_rgba(114,184,255,0.14)] md:min-h-9 md:w-auto md:self-start md:px-3 md:py-1"
+          className="group inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-border-hi bg-[var(--surface)] px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:border-border-strong hover:text-ink md:min-h-9 md:w-auto md:self-start md:px-3 md:py-1"
         >
           <span className="inline-flex items-center gap-2">
             {!open && (
@@ -105,9 +105,9 @@ export function Filters({
             Filters
           </span>
           {open ? (
-            <ChevronUp aria-hidden className="size-4 text-core-bright" />
+            <ChevronUp aria-hidden className="size-4 text-ink-2" />
           ) : (
-            <ChevronDown aria-hidden className="size-4 text-core-bright" />
+            <ChevronDown aria-hidden className="size-4 text-ink-2" />
           )}
         </button>
 
@@ -122,7 +122,7 @@ export function Filters({
           }`}
         >
           <div className={`min-h-0 overflow-hidden ${expanded ? "md:overflow-visible" : ""}`}>
-        <div className="flex max-h-[calc(100dvh-var(--hyp3-nav-h,64px)-120px)] flex-col gap-10 overflow-y-auto overscroll-contain pt-6 md:max-h-none md:overflow-visible md:pt-8">
+        <div className="mt-4 flex max-h-[calc(100dvh-var(--hyp3-nav-h,64px)-120px)] flex-col gap-10 overflow-y-auto overscroll-contain rounded-xl border border-border bg-[rgba(0,0,0,0.22)] p-5 shadow-[inset_0_10px_22px_-14px_rgba(0,0,0,0.8)] md:max-h-none md:overflow-visible md:p-6">
         {/* PRIMARY ROW — Scope + Story.
             Mobile: stack vertically. md+: lay out inline with generous gap. */}
         <div className="flex flex-col gap-10 md:flex-row md:flex-wrap md:items-start md:gap-10">
@@ -232,7 +232,7 @@ function PrimaryGroup({
   return (
     <div className="flex flex-col gap-2">
       <div className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
-        <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[rgba(18,119,222,0.15)] text-xs text-core-bright">
+        <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[var(--surface)] text-xs text-ink-1">
           {marker}
         </span>
         <span>{label}</span>
@@ -260,7 +260,7 @@ function SecondaryGroup({
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2.5">
       <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
         {marker && (
-          <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[rgba(18,119,222,0.15)] text-xs text-core-bright">
+          <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[var(--surface)] text-xs text-ink-1">
             {marker}
           </span>
         )}
@@ -283,7 +283,7 @@ function ModeToggle({
     { id: "season", label: "Season", sub: "5-mo" },
   ];
   return (
-    <div className="grid w-full grid-cols-2 gap-0.5 rounded-xl border-[1.5px] border-border-hi bg-[rgba(255,255,255,0.025)] p-1 shadow-[inset_0_0_16px_rgba(114,184,255,0.1)] sm:inline-flex sm:w-fit">
+    <div className="grid w-full grid-cols-2 gap-0.5 rounded-xl border-[1.5px] border-border bg-[rgba(0,0,0,0.25)] p-1 sm:inline-flex sm:w-fit">
       {modes.map((m) => {
         const active = mode === m.id;
         return (
@@ -294,13 +294,13 @@ function ModeToggle({
             aria-pressed={active}
             className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-2.5 py-1.5 transition-all sm:w-auto sm:px-3 md:min-h-9 md:px-3.5 md:py-1 ${
               active
-                ? "bg-[rgba(18,119,222,0.22)] text-core-bright shadow-[inset_0_0_0_1px_rgba(114,184,255,0.4)]"
+                ? "bg-[rgba(255,255,255,0.08)] text-ink shadow-[inset_0_0_0_1px_var(--border-hi)]"
                 : "text-ink-2 hover:text-ink"
             }`}
           >
             <span
               aria-hidden
-              className="size-1.5 shrink-0 rounded-full bg-core-bright shadow-[0_0_8px_var(--core-bright)]"
+              className="size-1.5 shrink-0 rounded-full bg-ink"
               style={{ opacity: active ? 1 : 0.3 }}
             />
             <span className="font-display text-[12px] font-black uppercase leading-none tracking-[0.08em]">
@@ -336,7 +336,7 @@ function Segmented({
   return (
     <div
       role="group"
-      className="grid w-full gap-[3px] rounded-[10px] border-[1.5px] border-border-hi bg-[rgba(255,255,255,0.025)] p-[3px] shadow-[inset_0_0_16px_rgba(114,184,255,0.1)] sm:inline-flex sm:w-fit sm:max-w-full sm:flex-wrap sm:gap-0"
+      className="grid w-full gap-[3px] rounded-[10px] border-[1.5px] border-border bg-[rgba(0,0,0,0.25)] p-[3px] sm:inline-flex sm:w-fit sm:max-w-full sm:flex-wrap sm:gap-0"
       style={{ gridTemplateColumns: `repeat(${restCount}, minmax(0, 1fr))` }}
     >
       {options.map((o, i) => {
@@ -396,7 +396,7 @@ function RoundDropdown({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex min-h-11 w-full min-w-[160px] items-center justify-between gap-2 rounded-lg border-[1.5px] border-border-hi bg-[rgba(255,255,255,0.025)] px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.06em] text-ink-1 shadow-[inset_0_0_16px_rgba(114,184,255,0.1)] transition-colors hover:border-border-strong sm:w-auto md:min-h-9 md:px-3 md:py-1"
+        className="inline-flex min-h-11 w-full min-w-[160px] items-center justify-between gap-2 rounded-lg border-[1.5px] border-border bg-[rgba(0,0,0,0.25)] px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.06em] text-ink-1 transition-colors hover:border-border-strong sm:w-auto md:min-h-9 md:px-3 md:py-1"
       >
         <span>{ROUND_LABEL[value]}</span>
         <ChevronDown
@@ -427,7 +427,7 @@ function RoundDropdown({
                     : "text-ink-1 hover:bg-[rgba(255,255,255,0.03)] hover:text-ink"
                 }`}
               >
-                <span className="inline-flex w-5 shrink-0 justify-center font-mono text-base leading-none text-core-bright">
+                <span className="inline-flex w-5 shrink-0 justify-center font-mono text-base leading-none text-ink">
                   {active ? "✓" : ""}
                 </span>
                 {ROUND_LABEL[r]}
