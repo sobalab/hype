@@ -117,8 +117,9 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
           }}
         />
 
-        {/* Rows */}
-        <div className="relative z-[1] flex flex-col gap-1 px-3 py-3 sm:px-6 sm:py-4">
+        {/* Rows — tightly stacked (gap-px) so the diverging bars read as one
+            continuous pyramid shape, condensing 68 teams into ~half the height. */}
+        <div className="relative z-[1] flex flex-col gap-px px-3 py-3 sm:px-6 sm:py-4">
           {sorted.map((t) => {
             const widthPct = (Math.abs(t.gap) / maxAbsGap) * 100;
             return (
@@ -172,7 +173,7 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
     <button
       type="button"
       onClick={() => onSelect(team)}
-      className={`group relative grid min-h-11 w-full grid-cols-2 items-stretch border-0 bg-transparent p-0 transition-colors ${
+      className={`group relative grid min-h-[26px] w-full grid-cols-2 items-stretch border-0 bg-transparent p-0 transition-colors pointer-coarse:min-h-[40px] ${
         isSel ? "bg-[rgba(114,184,255,0.06)]" : "hover:bg-[rgba(255,255,255,0.025)]"
       }`}
     >
@@ -182,7 +183,7 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
         {isOver && (
           <>
             <div
-              className="absolute right-0 top-1 bottom-1 rounded-l-sm transition-all"
+              className="absolute right-0 top-px bottom-px rounded-l-sm transition-all"
               style={{
                 width: `${widthPct}%`,
                 background: `linear-gradient(90deg, ${color}14, ${color}55 70%, ${color})`,
@@ -192,18 +193,18 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
               }}
             />
             <div className="absolute inset-y-0 left-2 right-1.5 z-[3] flex items-center gap-2 md:left-3 md:right-2 md:gap-2.5">
-              <span className="hidden shrink-0 font-mono text-sm font-semibold tabular-nums text-core-bright sm:inline">
+              <span className="hidden shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
                 {String(team.seed).padStart(2, "0")}
               </span>
-              <span className="min-w-0 flex-1 truncate text-left font-sans text-sm font-medium tracking-[0.01em] text-ink md:text-[15px]">
+              <span className="min-w-0 flex-1 truncate text-left font-sans text-[13px] font-medium tracking-[0.01em] text-ink md:text-sm">
                 {team.team}
               </span>
               <span
-                className="inline-flex min-w-[44px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-2 py-1 font-mono text-sm font-bold tabular-nums tracking-[0.02em] shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:px-2.5"
+                className="inline-flex min-w-[32px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-1.5 py-px font-mono text-xs font-bold tabular-nums tracking-[0.02em] shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
                 style={{
                   borderColor: `${color}66`,
                   color,
-                  textShadow: "0 0 12px currentColor",
+                  textShadow: "0 0 10px currentColor",
                 }}
               >
                 {gap}
@@ -219,7 +220,7 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
         {!isOver && (
           <>
             <div
-              className="absolute left-0 top-1 bottom-1 rounded-r-sm transition-all"
+              className="absolute left-0 top-px bottom-px rounded-r-sm transition-all"
               style={{
                 width: `${widthPct}%`,
                 background: `linear-gradient(270deg, ${color}14, ${color}55 70%, ${color})`,
@@ -230,19 +231,19 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
             />
             <div className="absolute inset-y-0 left-1.5 right-2 z-[3] flex items-center gap-2 md:left-2 md:right-3 md:gap-2.5">
               <span
-                className="inline-flex min-w-[44px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-2 py-1 font-mono text-sm font-bold tabular-nums tracking-[0.02em] shadow-[0_2px_12px_rgba(0,0,0,0.6)] md:px-2.5"
+                className="inline-flex min-w-[32px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-1.5 py-px font-mono text-xs font-bold tabular-nums tracking-[0.02em] shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
                 style={{
                   borderColor: `${color}66`,
                   color,
-                  textShadow: "0 0 12px currentColor",
+                  textShadow: "0 0 10px currentColor",
                 }}
               >
                 +{gap}
               </span>
-              <span className="min-w-0 flex-1 truncate text-right font-sans text-sm font-medium tracking-[0.01em] text-ink md:text-[15px]">
+              <span className="min-w-0 flex-1 truncate text-right font-sans text-[13px] font-medium tracking-[0.01em] text-ink md:text-sm">
                 {team.team}
               </span>
-              <span className="hidden shrink-0 font-mono text-sm font-semibold tabular-nums text-core-bright sm:inline">
+              <span className="hidden shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
                 {String(team.seed).padStart(2, "0")}
               </span>
             </div>

@@ -74,7 +74,7 @@ export function TeamSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full overflow-y-auto bg-bg-1 sm:max-w-2xl"
+        className="w-full overflow-y-auto bg-bg-1 sm:max-w-2xl! sm:overflow-hidden"
       >
         {team && (
           <TeamSheetBody
@@ -137,8 +137,8 @@ function TeamSheetBody({
 
   return (
     <div
-      className="relative isolate flex flex-col gap-5"
-      style={{ padding: "clamp(1.25rem, 4vw, 1.75rem)" }}
+      className="relative isolate flex flex-col gap-5 sm:h-full sm:min-h-0 sm:gap-2.5"
+      style={{ padding: "clamp(1.25rem, 4vw, 1.5rem)" }}
     >
       {/* Aurora glow behind */}
       <div
@@ -149,16 +149,16 @@ function TeamSheetBody({
         }}
       />
 
-      <SheetHeader className="gap-0 p-0">
-        <div className="mb-3 font-mono text-[13px] uppercase tracking-[0.18em] text-ink-2">
+      <SheetHeader className="gap-0 p-0 sm:shrink-0">
+        <div className="mb-3 font-mono text-[13px] uppercase tracking-[0.18em] text-ink-2 sm:mb-2">
           TEAM DOSSIER
         </div>
-        <div className="mb-4 flex items-center gap-4">
-          <div className="flex flex-col gap-2.5">
-            <span className="font-mono text-sm font-bold tabular-nums tracking-[0.06em] text-core-bright">
-              #{String(team.seed).padStart(2, "0")}
-            </span>
+        <div className="mb-4 flex items-center gap-4 sm:mb-0">
+          <div className="flex flex-col gap-2.5 sm:gap-2">
             <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-sm font-bold tabular-nums tracking-[0.06em] text-core-bright">
+                #{String(team.seed).padStart(2, "0")}
+              </span>
               <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-1">
                 {team.region.toUpperCase()} REGION
               </span>
@@ -188,8 +188,8 @@ function TeamSheetBody({
       </SheetHeader>
 
       {/* Big gap callout — mode-aware. */}
-      <div className="rounded-2xl border border-border bg-[rgba(255,255,255,0.025)] px-5 py-5 sm:px-6 sm:py-6">
-        <div className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-ink-2">
+      <div className="rounded-2xl border border-border bg-[rgba(255,255,255,0.025)] px-5 py-5 sm:shrink-0 sm:px-6 sm:py-3.5">
+        <div className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-ink-2 sm:mb-1.5">
           {modeLabel} Gap
         </div>
         <div
@@ -197,19 +197,24 @@ function TeamSheetBody({
           style={{
             color,
             textShadow: "0 0 24px currentColor",
-            fontSize: "clamp(48px, 10vw, 64px)",
+            fontSize: "clamp(40px, 6vw, 48px)",
           }}
         >
           {gap > 0 ? `+${gap}` : gap}
         </div>
-        <div className="mt-3.5 max-w-[480px] font-sans text-[15px] leading-[1.55] text-ink-1 sm:text-base">
+        <div className="mt-3 max-w-[480px] font-sans text-[15px] leading-[1.45] text-ink-1 sm:mt-2.5">
           {gapStoryCopy(mode, team, active, gap)}
         </div>
       </div>
 
-      {/* Stat grid — 2 cols at all sizes. Mode-active fields lead; the
-          opposite-mode gap is surfaced as a secondary stat for context. */}
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
+      {/* Stats + chart. On short desktop viewports (≤850px, the `compact`
+          variant) this region becomes a two-column row — stat grid beside the
+          chart — so the panel still fits without scrolling. Otherwise (mobile
+          and tall desktop) it stacks vertically with the chart filling. */}
+      <div className="flex flex-col gap-5 sm:min-h-0 sm:flex-1 sm:gap-2.5 compact:flex-row compact:gap-4">
+        {/* Stat grid — 2 cols normally, single column in the compact row so the
+            labels fit the narrower column. */}
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:shrink-0 compact:w-[316px] compact:grid-cols-1 compact:self-start">
         <SheetStat label="Wins" value={String(team.wins)} />
         <SheetStat label={`${modeLabel} hype rank`} value={`#${active.hypeRank}`} />
         <SheetStat
@@ -235,16 +240,17 @@ function TeamSheetBody({
         />
       </div>
 
-      {/* Full season curve */}
-      <ChartBlock
-        data={seasonDaily}
-        color={color}
-        peak={peak}
-        windowStart={hypeWindowStart}
-        windowEnd={hypeWindowEnd}
-        team={team}
-        showTournamentWindow={mode === "tournament"}
-      />
+        {/* Full season curve */}
+        <ChartBlock
+          data={seasonDaily}
+          color={color}
+          peak={peak}
+          windowStart={hypeWindowStart}
+          windowEnd={hypeWindowEnd}
+          team={team}
+          showTournamentWindow={mode === "tournament"}
+        />
+      </div>
     </div>
   );
 }
@@ -268,8 +274,8 @@ function ChartBlock({
 }) {
   const [view, setView] = useState<"area" | "line">("area");
   return (
-    <div className="flex flex-col gap-2 pt-4 sm:pt-6">
-      <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col gap-2 pt-4 sm:min-h-0 sm:flex-1 sm:pt-1">
+      <div className="flex flex-col items-start gap-2 sm:shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <span className="font-mono text-[13px] uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
           {showTournamentWindow
             ? "FULL SEASON HYPE CURVE"
@@ -305,7 +311,7 @@ function ChartBlock({
         view={view}
         showTournamentWindow={showTournamentWindow}
       />
-      <div className="font-mono text-[12px] tracking-[0.1em] text-ink-2">
+      <div className="font-mono text-[12px] tracking-[0.1em] text-ink-2 sm:shrink-0">
         peaked {peak.value.toFixed(0)} on {shortDate(peak.date)}
       </div>
     </div>
@@ -314,11 +320,11 @@ function ChartBlock({
 
 function SheetStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-bg-1 px-5 py-3.5 sm:px-6 sm:py-4">
-      <div className="break-words font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2">
+    <div className="bg-bg-1 px-5 py-3.5 sm:px-5 sm:py-2 compact:py-1.5">
+      <div className="break-words font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2 sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap sm:tracking-[0.08em] compact:overflow-visible compact:whitespace-normal compact:text-[11px] compact:leading-tight compact:tracking-[0.04em]">
         {label}
       </div>
-      <div className="mt-2 font-display text-[22px] font-bold leading-none text-ink sm:text-[24px]">
+      <div className="mt-1.5 font-display text-[22px] font-bold leading-none text-ink sm:mt-1 sm:text-[20px]">
         {value}
       </div>
     </div>
@@ -362,11 +368,33 @@ function Curve({
 }) {
   const isMobile = useIsMobile();
   const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [pinnedIdx, setPinnedIdx] = useState<number | null>(null);
+  // On desktop the chart flexes to fill the leftover sheet height; we measure
+  // that height and feed it into the SVG's pixel math so the curve + overlays
+  // fit the viewport without scrolling. Mobile keeps a fixed scrollable height.
+  const [fluidH, setFluidH] = useState(360);
+
+  // Reserve space for the "Tournament window" badge only when the band is
+  // shown (season-mode hides the badge so the chart can sit closer to the
+  // toggle above it).
+  const topPad = showTournamentWindow ? 28 : 0;
+
+  useEffect(() => {
+    if (isMobile) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const h = el.clientHeight - topPad;
+      if (h > 0) setFluidH(Math.max(135, h));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile, topPad]);
 
   const W = 600;
-  const H = isMobile ? 300 : 380;
+  const H = isMobile ? 300 : fluidH;
   const PAD_L = 72;
   const PAD_R = 16;
   const PAD_T = 44;
@@ -436,12 +464,12 @@ function Curve({
   const windowLabelLeftPct =
     startX !== null ? (startX / W) * 100 : null;
 
-  // Reserve space for the "Tournament window" badge only when the band is
-  // shown (season-mode hides the badge so the chart can sit closer to the
-  // toggle above it).
-  const topPad = showTournamentWindow ? 28 : 0;
   return (
-    <div className="relative" style={{ paddingTop: topPad }}>
+    <div
+      ref={wrapRef}
+      className="relative sm:min-h-0 sm:flex-1"
+      style={{ paddingTop: topPad }}
+    >
       {/* Y-axis tick labels — HTML overlay so text isn't horizontally squished
           by the SVG's preserveAspectRatio="none". The SVG's height is fixed at
           H pixels, so y(v) viewBox-units lines up 1:1 with pixel y-offset
