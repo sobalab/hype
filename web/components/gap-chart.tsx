@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/icon";
+import { useReveal } from "@/components/motion/use-reveal";
 import { StoryTag, Team } from "@/lib/data";
 
 const TAG_COLOR: Record<StoryTag, string> = {
@@ -18,6 +19,10 @@ type Props = {
 };
 
 export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
+  // Staggered entrance on mount / route navigation. Window covers the last
+  // row's (delay + animation); after it closes, filter/scope changes re-render
+  // without re-animating.
+  const revealing = useReveal(1500);
   const sorted = [...teams].sort((a, b) => a.gap - b.gap);
 
   if (sorted.length === 0) {
@@ -120,7 +125,7 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
         {/* Rows — tightly stacked (gap-px) so the diverging bars read as one
             continuous pyramid shape, condensing 68 teams into ~half the height. */}
         <div className="relative z-[1] flex flex-col gap-px px-3 py-3 sm:px-6 sm:py-4">
-          {sorted.map((t) => {
+          {sorted.map((t, i) => {
             const widthPct = (Math.abs(t.gap) / maxAbsGap) * 100;
             return (
               <DivRow
@@ -131,6 +136,7 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
                 color={TAG_COLOR[t.story_tag]}
                 isSel={selectedTeam === t.team}
                 onSelect={onSelect}
+                revealDelay={revealing ? Math.min(i * 13, 720) : null}
               />
             );
           })}
@@ -165,15 +171,22 @@ type RowProps = {
   color: string;
   isSel: boolean;
   onSelect: (t: Team) => void;
+  /** ms delay for the entrance animation, or null when not revealing. */
+  revealDelay: number | null;
 };
 
-function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
+function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }: RowProps) {
   const gap = team.gap;
+  const animate = revealDelay != null;
+  const delayStyle = animate ? { animationDelay: `${revealDelay}ms` } : undefined;
   return (
     <button
       type="button"
       onClick={() => onSelect(team)}
+      style={delayStyle}
       className={`group relative grid min-h-[26px] w-full grid-cols-2 items-stretch border-0 bg-transparent p-0 transition-colors pointer-coarse:min-h-[40px] ${
+        animate ? "viz-fade" : ""
+      } ${
         isSel ? "bg-[rgba(114,184,255,0.06)]" : "hover:bg-[rgba(255,255,255,0.025)]"
       }`}
     >
@@ -183,13 +196,18 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
         {isOver && (
           <>
             <div
-              className="absolute right-0 top-px bottom-px rounded-l-sm transition-all"
+              className={`absolute right-0 top-px bottom-px rounded-l-sm transition-all ${
+                animate ? "viz-grow-x" : ""
+              }`}
               style={{
                 width: `${widthPct}%`,
                 background: `linear-gradient(90deg, ${color}14, ${color}55 70%, ${color})`,
                 boxShadow: isSel
                   ? `inset 0 0 0 1px ${color}cc`
                   : `inset 0 0 0 1px ${color}66`,
+                ...(animate
+                  ? { transformOrigin: "right", animationDelay: `${revealDelay}ms` }
+                  : null),
               }}
             />
             <div className="absolute inset-y-0 left-2 right-1.5 z-[3] flex items-center gap-2 md:left-3 md:right-2 md:gap-2.5">
@@ -220,13 +238,18 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect }: RowProps) {
         {!isOver && (
           <>
             <div
-              className="absolute left-0 top-px bottom-px rounded-r-sm transition-all"
+              className={`absolute left-0 top-px bottom-px rounded-r-sm transition-all ${
+                animate ? "viz-grow-x" : ""
+              }`}
               style={{
                 width: `${widthPct}%`,
                 background: `linear-gradient(270deg, ${color}14, ${color}55 70%, ${color})`,
                 boxShadow: isSel
                   ? `inset 0 0 0 1px ${color}cc`
                   : `inset 0 0 0 1px ${color}66`,
+                ...(animate
+                  ? { transformOrigin: "left", animationDelay: `${revealDelay}ms` }
+                  : null),
               }}
             />
             <div className="absolute inset-y-0 left-1.5 right-2 z-[3] flex items-center gap-2 md:left-2 md:right-3 md:gap-2.5">

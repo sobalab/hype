@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Icon } from "@/components/icon";
+import { useReveal } from "@/components/motion/use-reveal";
 import { GapMode, StoryTag, Team } from "@/lib/data";
 
 const TAG_COLOR: Record<StoryTag, string> = {
@@ -193,6 +194,12 @@ export function TimelineHeatmap({
     ? buckets.slice(windowStart, windowStart + MOBILE_WINDOW_SIZE)
     : buckets;
 
+  // Left-to-right column wipe on mount / route navigation; closes before
+  // filter/scope edits so they don't re-trigger the sweep.
+  const revealing = useReveal(1100);
+  const COL_STEP = 32; // ms between columns
+  const tailDelay = visibleBuckets.length * COL_STEP;
+
   if (sortedTeams.length === 0) {
     return (
       <div className="mx-auto max-w-[1180px] px-5 py-24 text-center text-base text-ink-2 sm:px-7">
@@ -338,11 +345,14 @@ export function TimelineHeatmap({
               <div
                 key={`hdr-${b.key}`}
                 title={b.isAnchor ? `${b.tooltip} (Selection Sunday)` : b.tooltip}
-                className="flex items-center justify-center bg-black/40 px-1 py-2 font-mono text-[9px] uppercase tracking-[0.06em]"
+                className={`flex items-center justify-center bg-black/40 px-1 py-2 font-mono text-[9px] uppercase tracking-[0.06em] ${
+                  revealing ? "viz-fade" : ""
+                }`}
                 style={{
                   color: b.isAnchor ? "var(--core-bright)" : "var(--ink-2)",
                   borderLeft: b.isAnchor ? "1px solid rgba(114,184,255,0.6)" : undefined,
                   marginLeft: i === 0 ? undefined : 0,
+                  ...(revealing ? { animationDelay: `${i * COL_STEP}ms` } : null),
                 }}
               >
                 {b.label}
@@ -361,7 +371,10 @@ export function TimelineHeatmap({
                   <button
                     type="button"
                     onClick={() => onSelect(t)}
+                    style={revealing ? { animationDelay: "0ms" } : undefined}
                     className={`flex min-h-11 items-center gap-2 px-3.5 py-1 text-left transition ${
+                      revealing ? "viz-fade" : ""
+                    } ${
                       isSel ? "bg-[rgba(114,184,255,0.06)]" : "bg-transparent"
                     }`}
                   >
@@ -372,7 +385,7 @@ export function TimelineHeatmap({
                       {t.team}
                     </span>
                   </button>
-                  {visibleBuckets.map((b) => {
+                  {visibleBuckets.map((b, bi) => {
                     const value = inner?.get(b.key) ?? 0;
                     const intensity = Math.min(1, value / globalMax);
                     const bg = cellColor(intensity);
@@ -382,7 +395,9 @@ export function TimelineHeatmap({
                         type="button"
                         onClick={() => onSelect(t)}
                         title={`${t.team}, ${b.tooltip}, ${value.toFixed(1)}`}
-                        className="transition hover:opacity-80"
+                        className={`transition hover:opacity-80 ${
+                          revealing ? "viz-fade" : ""
+                        }`}
                         style={{
                           backgroundColor: bg,
                           boxShadow:
@@ -393,14 +408,22 @@ export function TimelineHeatmap({
                           margin: "6px 2px",
                           borderRadius: 3,
                           minHeight: 32,
+                          ...(revealing
+                            ? { animationDelay: `${bi * COL_STEP}ms` }
+                            : null),
                         }}
                         aria-label={`${t.team}, ${b.tooltip}: ${value.toFixed(1)}`}
                       />
                     );
                   })}
                   <div
-                    className="flex min-h-11 items-center justify-center border-l border-border bg-transparent font-mono text-sm font-bold tabular-nums"
-                    style={{ color: TAG_COLOR[t.story_tag] }}
+                    className={`flex min-h-11 items-center justify-center border-l border-border bg-transparent font-mono text-sm font-bold tabular-nums ${
+                      revealing ? "viz-fade" : ""
+                    }`}
+                    style={{
+                      color: TAG_COLOR[t.story_tag],
+                      ...(revealing ? { animationDelay: `${tailDelay}ms` } : null),
+                    }}
                   >
                     {t.gap > 0 ? `+${t.gap}` : t.gap}
                   </div>

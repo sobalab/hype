@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@/components/icon";
+import { useReveal } from "@/components/motion/use-reveal";
 import { Region, REGIONS, StoryTag, Team } from "@/lib/data";
 
 const TAG_COLOR: Record<StoryTag, string> = {
@@ -71,6 +72,8 @@ export function BracketTree({
     tree: buildRegionTree(teams, r),
   }));
   const champion = teams.find((t) => t.wins === 6) ?? null;
+  // Region panels (then the Final Four strip) rise in on mount / navigation.
+  const revealing = useReveal(1200);
 
   return (
     <section
@@ -134,7 +137,7 @@ export function BracketTree({
             : "grid-cols-1 xl:grid-cols-2"
         }`}
       >
-        {trees.map(({ region, tree }) => (
+        {trees.map(({ region, tree }, i) => (
           <RegionTreeCard
             key={region}
             region={region}
@@ -142,6 +145,7 @@ export function BracketTree({
             visibleTagSet={visibleTagSet}
             selectedTeam={selectedTeam}
             onSelect={onSelect}
+            revealDelay={revealing ? i * 90 : null}
           />
         ))}
       </div>
@@ -153,6 +157,7 @@ export function BracketTree({
           visibleTagSet={visibleTagSet}
           selectedTeam={selectedTeam}
           onSelect={onSelect}
+          revealDelay={revealing ? trees.length * 90 : null}
         />
       )}
     </section>
@@ -362,15 +367,22 @@ function RegionTreeCard({
   visibleTagSet,
   selectedTeam,
   onSelect,
+  revealDelay,
 }: {
   region: Region;
   tree: RegionTree;
   visibleTagSet: Set<StoryTag>;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
+  revealDelay: number | null;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-bg-1">
+    <div
+      className={`overflow-hidden rounded-xl border border-border bg-bg-1 ${
+        revealDelay != null ? "viz-rise" : ""
+      }`}
+      style={revealDelay != null ? { animationDelay: `${revealDelay}ms` } : undefined}
+    >
       <div className="flex items-center justify-between border-b border-border bg-black/30 px-3.5 py-2.5">
         <span className="font-display text-sm font-bold uppercase tracking-[0.08em] text-ink">
           {region}
@@ -487,12 +499,14 @@ function FinalStrip({
   visibleTagSet,
   selectedTeam,
   onSelect,
+  revealDelay,
 }: {
   teams: Team[];
   champion: Team | null;
   visibleTagSet: Set<StoryTag>;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
+  revealDelay: number | null;
 }) {
   const regionalChamps: (Team | null)[] = REGIONS.map(
     (r) => teams.find((t) => t.region === r && t.wins >= 4) ?? null
@@ -501,7 +515,12 @@ function FinalStrip({
   const f4Winners = teams.filter((t) => t.wins >= 5).slice(0, 2);
 
   return (
-    <div className="mt-5 rounded-2xl border border-[rgba(114,184,255,0.2)] bg-[rgba(18,119,222,0.04)] p-5">
+    <div
+      className={`mt-5 rounded-2xl border border-[rgba(114,184,255,0.2)] bg-[rgba(18,119,222,0.04)] p-5 ${
+        revealDelay != null ? "viz-rise" : ""
+      }`}
+      style={revealDelay != null ? { animationDelay: `${revealDelay}ms` } : undefined}
+    >
       <div className="mb-4 flex items-center justify-between">
         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
           <span className="text-core-bright">F4</span> / Championship

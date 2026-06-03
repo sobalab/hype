@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/icon";
+import { useReveal } from "@/components/motion/use-reveal";
 import { StoryTag, Team } from "@/lib/data";
 
 const TAG_COLOR: Record<StoryTag, string> = {
@@ -52,6 +53,8 @@ function useIsMobile() {
 
 export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
   const isMobile = useIsMobile();
+  // Dots pop in on mount / route navigation; closes before filter/scope edits.
+  const revealing = useReveal(1400);
   const calls = useMemo(() => {
     const above = [...teams].filter((t) => t.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 3);
     const below = [...teams].filter((t) => t.gap < 0).sort((a, b) => a.gap - b.gap).slice(0, 3);
@@ -234,7 +237,7 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
           </foreignObject>
 
           {/* Dots */}
-          {teams.map((t) => {
+          {teams.map((t, i) => {
             const x = xFor(t.hype_normalized);
             const y = yFor(t.wins);
             const color = TAG_COLOR[t.story_tag];
@@ -245,7 +248,17 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
             return (
               <g
                 key={t.team}
-                style={{ cursor: "pointer" }}
+                className={revealing ? "viz-pop" : undefined}
+                style={{
+                  cursor: "pointer",
+                  ...(revealing
+                    ? {
+                        transformBox: "fill-box",
+                        transformOrigin: "center",
+                        animationDelay: `${Math.min(i * 11, 650)}ms`,
+                      }
+                    : null),
+                }}
                 onClick={() => onSelect(t)}
               >
                 <circle
