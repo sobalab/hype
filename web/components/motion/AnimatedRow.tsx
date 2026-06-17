@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { ComponentProps, ReactNode } from "react";
 
-import { EASING } from "./easing";
+import { SPRING } from "./easing";
 
 type Props = Omit<ComponentProps<typeof motion.div>, "children"> & {
   children: ReactNode;
@@ -34,7 +34,7 @@ export function AnimatedRow({
     <motion.div
       layout="position"
       className={className}
-      transition={{ duration: 0.35, ease: EASING }}
+      transition={SPRING}
       whileHover={hoverLift ? { y: -1 } : undefined}
       {...rest}
     >

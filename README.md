@@ -110,7 +110,7 @@ Vercel auto-deploys on push to `main`. Set Vercel project's **Root Directory** t
 ## Brand
 
 - **Name:** HYP3 (always all caps)
-- **Accent:** `#44D1D1` (centralized as `--brand` in `web/app/globals.css`)
-- **Display font:** Neue Black (drop `web/public/fonts/TheNeue-Black.woff2`)
-- **Body font:** Host Grotesk, weight 500 (Google Fonts)
+- **Accent:** blue core ramp `#1277de` into `#72b8ff` (centralized as `--core` / `--core-bright` in `web/app/globals.css`)
+- **Display font:** Neue Black, logo / HYP3 wordmark only (`web/public/fonts/TheNeue-Black.woff2`)
+- **Body / UI font:** Alpha Lyrae Medium, weight 500 (`web/public/fonts/AlphaLyrae-Medium.woff2`)
 - **Mono / labels:** FA-1 Regular (drop `web/public/fonts/FA-1-Regular.otf`)

@@ -2,6 +2,19 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Primary UI typeface: Alpha Lyrae Medium. Drives the whole interface via
+   --font-sans below. The only exception is the logo / HYP3 wordmark, which
+   stays on Neue Black (see .font-display). */
+@font-face {
+  font-family: "Alpha Lyrae";
+  src:
+    url("/fonts/AlphaLyrae-Medium.woff2") format("woff2"),
+    url("/fonts/AlphaLyrae-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Display font: Neue Black. */
 @font-face {
   font-family: "Neue Black";
@@ -60,7 +73,7 @@
   --color-as-expected: var(--as-expected);
   --color-noise: var(--noise);
 
-  --font-sans: var(--font-host), "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: "Alpha Lyrae", var(--font-host), "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "FA-1", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-display: "Neue Black", "Helvetica Neue", "Arial Black", system-ui, sans-serif;
   --font-heading: var(--font-display);

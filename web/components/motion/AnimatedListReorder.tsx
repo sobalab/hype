@@ -3,7 +3,7 @@
 import { LayoutGroup, MotionConfig, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 
-import { EASING } from "./easing";
+import { SPRING } from "./easing";
 
 type Props = {
   children: ReactNode;
@@ -14,8 +14,10 @@ type Props = {
 
 // Coordinates FLIP-style layout animations between sibling AnimatedRows.
 // Doesn't render markup of its own beyond the wrapping div; just provides the
-// LayoutGroup context and the shared transition timing. Reduce-motion users
-// get a plain div passthrough.
+// LayoutGroup context and the shared transition timing. List reorder is a
+// "playful surface" in the motion system, so rows settle on the SPRING track
+// (small confident overshoot) rather than the editorial curve. Reduce-motion
+// users get a plain div passthrough with no animation.
 export function AnimatedListReorder({ children, className, id }: Props) {
   const reduce = useReducedMotion();
 
@@ -24,7 +26,7 @@ export function AnimatedListReorder({ children, className, id }: Props) {
   }
 
   return (
-    <MotionConfig transition={{ duration: 0.35, ease: EASING }}>
+    <MotionConfig transition={SPRING}>
       <LayoutGroup id={id}>
         <div className={className}>{children}</div>
       </LayoutGroup>
