@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import { useReveal } from "@/components/motion/use-reveal";
@@ -12,6 +12,25 @@ const TAG_COLOR: Record<StoryTag, string> = {
   as_expected: "#efecaf",
   noise: "#b4b4ef",
 };
+
+// Residual recolor endpoints. A dot above the user's line (out-performed the
+// bet) trends teal; below (fell short) trends pink; near the line stays the
+// neutral blue core.
+const NEUTRAL: RGB = [114, 184, 255];
+const OVER: RGB = [102, 231, 216];
+const UNDER: RGB = [249, 149, 182];
+
+type RGB = [number, number, number];
+
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+
+function lerpRGB(a: RGB, b: RGB, t: number): RGB {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
 
 const ROUND_LABELS = [
   "First Round",
@@ -32,6 +51,12 @@ const SHORT_ROUND_LABELS = [
   "F2",
   "CH",
 ] as const;
+
+// The user's expectation line: expected wins at hype 0 (y0) and at hype 100
+// (y1). The default {0, 6} is the original diagonal.
+type BetLine = { y0: number; y1: number };
+const DEFAULT_LINE: BetLine = { y0: 0, y1: 6 };
+const KEY_STEP = 0.25;
 
 type Props = {
   teams: Team[];
@@ -55,11 +80,37 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
   const isMobile = useIsMobile();
   // Dots pop in on mount / route navigation; closes before filter/scope edits.
   const revealing = useReveal(1400);
+
+  const [line, setLine] = useState<BetLine>(DEFAULT_LINE);
+  const [focusedHandle, setFocusedHandle] = useState<"left" | "right" | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef<{
+    mode: "left" | "right" | "body";
+    startY0: number;
+    startY1: number;
+    startWins: number;
+  } | null>(null);
+
+  const isCustom = line.y0 !== DEFAULT_LINE.y0 || line.y1 !== DEFAULT_LINE.y1;
+
   const calls = useMemo(() => {
     const above = [...teams].filter((t) => t.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 3);
     const below = [...teams].filter((t) => t.gap < 0).sort((a, b) => a.gap - b.gap).slice(0, 3);
     return { above, below };
   }, [teams]);
+
+  // Expected wins under the user's line at a given hype.
+  const expectedAt = (hype: number) =>
+    line.y0 + (line.y1 - line.y0) * (Math.min(100, Math.max(0, hype)) / 100);
+
+  // Average absolute miss of the field against the user's line, in wins.
+  const miss = useMemo(() => {
+    if (teams.length === 0) return 0;
+    let s = 0;
+    for (const t of teams) s += Math.abs(t.wins - expectedAt(t.hype_normalized));
+    return s / teams.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teams, line.y0, line.y1]);
 
   if (teams.length === 0) {
     return (
@@ -71,9 +122,6 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
 
   const W = isMobile ? 480 : 1200;
   const H = isMobile ? 520 : 760;
-  // Mobile labels are short (CH/F2/F4/E8/S16/R32/R64) — ~24px wide max.
-  // Desktop labels are full names ("First Round" etc.) — ~92px wide.
-  // PAD_L = label width + tick offset (8/14) + breathing room from container edge.
   const PAD_L = isMobile ? 72 : 170;
   const PAD_R = isMobile ? 40 : 110;
   const PAD_T = isMobile ? 48 : 80;
@@ -84,9 +132,83 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
   const tickSize = isMobile ? 11 : 13;
   const zoneSize = isMobile ? 11 : 14;
 
-  const xFor = (hype: number) =>
-    PAD_L + (Math.min(100, hype) / 100) * PW;
+  const xFor = (hype: number) => PAD_L + (Math.min(100, hype) / 100) * PW;
   const yFor = (wins: number) => PAD_T + PH - (wins / 6) * PH;
+
+  // Convert a screen Y (clientY) into wins using the SVG's live CTM, so it is
+  // correct regardless of viewBox scaling / letterboxing.
+  const clientToWins = (clientY: number): number | null => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = 0;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    return ((PAD_T + PH - local.y) / PH) * 6;
+  };
+
+  const beginDrag = (
+    mode: "left" | "right" | "body",
+    e: React.PointerEvent,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    dragRef.current = {
+      mode,
+      startY0: line.y0,
+      startY1: line.y1,
+      startWins: clientToWins(e.clientY) ?? 0,
+    };
+  };
+
+  const onDragMove = (e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const w = clientToWins(e.clientY);
+    if (w == null) return;
+    if (d.mode === "left") {
+      setLine((L) => ({ ...L, y0: clamp(w, 0, 6) }));
+    } else if (d.mode === "right") {
+      setLine((L) => ({ ...L, y1: clamp(w, 0, 6) }));
+    } else {
+      // Body drag: translate both ends together, preserving slope.
+      const raw = w - d.startWins;
+      const lo = Math.min(d.startY0, d.startY1);
+      const hi = Math.max(d.startY0, d.startY1);
+      const delta = clamp(raw, -lo, 6 - hi);
+      setLine({ y0: d.startY0 + delta, y1: d.startY1 + delta });
+    }
+  };
+
+  const endDrag = (e: React.PointerEvent) => {
+    dragRef.current = null;
+    try {
+      (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    } catch {
+      // pointer may already be released
+    }
+  };
+
+  const onHandleKey = (which: "left" | "right", e: React.KeyboardEvent) => {
+    let delta = 0;
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") delta = KEY_STEP;
+    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") delta = -KEY_STEP;
+    else return;
+    e.preventDefault();
+    setLine((L) =>
+      which === "left"
+        ? { ...L, y0: clamp(L.y0 + delta, 0, 6) }
+        : { ...L, y1: clamp(L.y1 + delta, 0, 6) },
+    );
+  };
+
+  const lx = xFor(0);
+  const rx = xFor(100);
+  const ly = yFor(line.y0);
+  const ry = yFor(line.y1);
 
   return (
     <section
@@ -106,9 +228,8 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
             className="m-0 max-w-[820px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
             style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
           >
-            The diagonal is the{" "}
-            <span className="text-core-bright">bet</span>. Distance from it is
-            the <span className="text-core-bright">miss</span>.
+            Draw your own <span className="text-core-bright">bet</span>. Distance
+            from your line is the <span className="text-core-bright">miss</span>.
           </h2>
         </div>
         <div className="flex flex-col gap-3">
@@ -124,14 +245,12 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
             </span>
           </div>
           <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
-            X = hype. Y = wins. Distance from the diagonal is the gap.
+            Drag the line, or either end, to set how much hype should buy. Every
+            dot recolors by its distance from your line.
           </p>
         </div>
       </header>
 
-      {/* Chart + callouts. Default (xs): callouts stack column below chart.
-          sm-md: callouts in a row below chart.
-          lg+: callouts move to the right of the chart, vertically stacked. */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
         <div
           className="relative order-1 flex-1 overflow-hidden rounded-[14px] border border-border bg-bg-1"
@@ -139,9 +258,14 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
         >
 
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="xMidYMid meet"
           className="relative z-[1] block size-full"
+          style={{ touchAction: "none" }}
+          onPointerMove={onDragMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
         >
           <defs>
             <linearGradient id="scatter-diag" x1="0" y1="1" x2="1" y2="0">
@@ -183,15 +307,40 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
             />
           ))}
 
-          {/* Expected diagonal */}
+          {/* Ghost of the original diagonal — the bet you started from. Only
+              shown once the line has been moved, as a reference. */}
+          {isCustom && (
+            <line
+              x1={xFor(0)}
+              y1={yFor(0)}
+              x2={xFor(100)}
+              y2={yFor(6)}
+              stroke="rgba(255,255,255,0.16)"
+              strokeWidth="1.2"
+              strokeDasharray="2 7"
+            />
+          )}
+
+          {/* The user's bet line. */}
           <line
-            x1={xFor(0)}
-            y1={yFor(0)}
-            x2={xFor(100)}
-            y2={yFor(6)}
+            x1={lx}
+            y1={ly}
+            x2={rx}
+            y2={ry}
             stroke="url(#scatter-diag)"
-            strokeWidth="1.5"
-            strokeDasharray="4 6"
+            strokeWidth="2"
+            strokeDasharray={isCustom ? undefined : "4 6"}
+          />
+          {/* Fat transparent hit-line for dragging the body. */}
+          <line
+            x1={lx}
+            y1={ly}
+            x2={rx}
+            y2={ry}
+            stroke="transparent"
+            strokeWidth="22"
+            style={{ cursor: "grab" }}
+            onPointerDown={(e) => beginDrag("body", e)}
           />
 
           {/* Zone labels */}
@@ -212,7 +361,7 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
               }}
             >
               <Icon name="up-arrow" size={zoneSize * 0.9} className="mr-2 inline-block align-middle" />
-              UNDERHYPED
+              BEAT THE BET
             </div>
           </foreignObject>
           <foreignObject
@@ -232,19 +381,22 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
               }}
             >
               <Icon name="down-arrow" size={zoneSize * 0.9} className="mr-2 inline-block align-middle" />
-              OVERHYPED
+              MISSED THE BET
             </div>
           </foreignObject>
 
-          {/* Dots */}
+          {/* Dots — recolored live by residual from the user's line. */}
           {teams.map((t, i) => {
             const x = xFor(t.hype_normalized);
             const y = yFor(t.wins);
-            const color = TAG_COLOR[t.story_tag];
+            const res = t.wins - expectedAt(t.hype_normalized);
+            const mag = Math.min(1, Math.abs(res) / 4);
+            const [cr, cg, cb] = lerpRGB(NEUTRAL, res >= 0 ? OVER : UNDER, mag);
+            const color = `rgb(${cr}, ${cg}, ${cb})`;
             const isSel = selectedTeam === t.team;
             const baseR = isMobile ? 6 : 7;
             const bigR = isMobile ? 8 : 10;
-            const r = isSel ? bigR + 2 : Math.abs(t.gap) > 25 ? bigR : baseR;
+            const r = isSel ? bigR + 2 : Math.abs(res) > 2.5 ? bigR : baseR;
             return (
               <g
                 key={t.team}
@@ -267,7 +419,7 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
                   r={r + 10}
                   fill={color}
                   opacity="0.25"
-                  style={{ filter: "blur(5px)" }}
+                  style={{ filter: "blur(5px)", transition: "fill 140ms linear" }}
                 />
                 <circle
                   cx={x}
@@ -277,6 +429,7 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
                   fillOpacity={isSel ? 1 : 0.95}
                   stroke="rgba(10,10,12,0.9)"
                   strokeWidth="1.6"
+                  style={{ transition: "fill 140ms linear" }}
                 />
                 {isSel && (
                   <circle
@@ -291,6 +444,39 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
               </g>
             );
           })}
+
+          {/* Bet-line endpoint handles. Focusable sliders: arrow keys nudge by
+              0.25 wins. Larger invisible hit-target for touch. */}
+          {([
+            { which: "left" as const, hx: lx, hy: ly, val: line.y0, label: "Expected wins at low hype" },
+            { which: "right" as const, hx: rx, hy: ry, val: line.y1, label: "Expected wins at high hype" },
+          ]).map((h) => (
+            <g key={h.which}>
+              {focusedHandle === h.which && (
+                <circle cx={h.hx} cy={h.hy} r={16} fill="none" stroke="#72b8ff" strokeWidth="1.5" opacity="0.7" />
+              )}
+              <circle cx={h.hx} cy={h.hy} r={7} fill="#0a0a0c" stroke="#72b8ff" strokeWidth="2.5" />
+              <circle cx={h.hx} cy={h.hy} r={3} fill="#72b8ff" />
+              <circle
+                cx={h.hx}
+                cy={h.hy}
+                r={22}
+                fill="transparent"
+                tabIndex={0}
+                role="slider"
+                aria-label={h.label}
+                aria-orientation="vertical"
+                aria-valuemin={0}
+                aria-valuemax={6}
+                aria-valuenow={Math.round(h.val * 100) / 100}
+                style={{ cursor: "ns-resize", outline: "none" }}
+                onPointerDown={(e) => beginDrag(h.which, e)}
+                onFocus={() => setFocusedHandle(h.which)}
+                onBlur={() => setFocusedHandle(null)}
+                onKeyDown={(e) => onHandleKey(h.which, e)}
+              />
+            </g>
+          ))}
 
           {/* X axis ticks */}
           {[0, 25, 50, 75, 100].map((h) => (
@@ -337,11 +523,51 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
         </div>
 
         <div className="order-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:w-[280px] lg:shrink-0 lg:flex-col lg:flex-nowrap lg:gap-4">
+          <BetCard miss={miss} isCustom={isCustom} onReset={() => setLine(DEFAULT_LINE)} />
           <CalloutGroup label="Most underhyped" tag="underhyped" teams={calls.above} arrow="up-arrow" />
           <CalloutGroup label="Most overhyped" tag="overhyped" teams={calls.below} arrow="down-arrow" />
         </div>
       </div>
     </section>
+  );
+}
+
+function BetCard({
+  miss,
+  isCustom,
+  onReset,
+}: {
+  miss: number;
+  isCustom: boolean;
+  onReset: () => void;
+}) {
+  return (
+    <div className="min-w-[200px] flex-1 rounded-[10px] border border-core-bright/40 bg-[rgba(18,119,222,0.10)] px-4 py-3 lg:flex-none">
+      <div className="mb-2 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
+        Your bet line
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="font-display text-2xl font-bold tabular-nums text-ink">
+          {miss.toFixed(2)}
+        </span>
+        <span className="font-mono text-xs uppercase tracking-[0.12em] text-ink-2">
+          avg miss (wins)
+        </span>
+      </div>
+      <p className="mt-2 mb-0 font-mono text-[11px] leading-[1.5] tracking-[0.04em] text-ink-2">
+        Lower is a tighter fit. Drag the ends or use arrow keys when a handle is
+        focused.
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={!isCustom}
+        className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 font-display text-[12px] font-black uppercase tracking-[0.1em] text-ink-1 transition-colors enabled:hover:border-border-hi enabled:hover:text-ink disabled:opacity-40"
+      >
+        <Icon name="reset" size={12} />
+        Reset to diagonal
+      </button>
+    </div>
   );
 }
 
