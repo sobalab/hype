@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+
+import { GapPredict } from "@/components/gap-predict";
 import { Icon } from "@/components/icon";
 import { AnimatedListReorder, AnimatedRow } from "@/components/motion";
 import { useReveal } from "@/components/motion/use-reveal";
@@ -50,6 +53,7 @@ export function GapChart({
   // row's (delay + animation); after it closes, filter/scope changes re-render
   // without re-animating.
   const revealing = useReveal(1500);
+  const [predicting, setPredicting] = useState(false);
 
   // Interpolate each team's gap between its tournament and season ends, then
   // sort by the live value so the list reorders as the scope is scrubbed.
@@ -96,38 +100,64 @@ export function GapChart({
             <span className="text-core-bright">outcome</span>.
           </h2>
         </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-baseline gap-2.5">
-            <span
-              className="font-display font-bold leading-none text-ink"
-              style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
-            >
-              {rows.length}
-            </span>
-            <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
-              Teams
-            </span>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-baseline gap-2.5">
+              <span
+                className="font-display font-bold leading-none text-ink"
+                style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
+              >
+                {rows.length}
+              </span>
+              <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
+                Teams
+              </span>
+            </div>
+            <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
+              Left = overhyped. Right = underhyped. Tap any row to expand team
+              details.
+            </p>
           </div>
-          <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
-            Left = overhyped. Right = underhyped. Tap any row to expand team
-            details.
-          </p>
+
+          {!predicting && (
+            <button
+              type="button"
+              onClick={() => setPredicting(true)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.1em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)]"
+            >
+              <Icon name="bullet" size={6} className="inline-block" />
+              Predict the order
+            </button>
+          )}
         </div>
 
-        {/* Scope morph — drag from tournament to season and watch every bar
-            flow between its two positions. */}
-        <ScopeSlider value={scope} onChange={onScopeChange} />
+        {!predicting && (
+          <>
+            {/* Scope morph — drag from tournament to season and watch every bar
+                flow between its two positions. */}
+            <ScopeSlider value={scope} onChange={onScopeChange} />
 
-        {/* Color legend — vertical stack on mobile, full-width row on sm+. */}
-        <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
-          <LegendItem color="var(--overhyped)" label="Overhyped" />
-          <LegendItem color="var(--noise)" label="Noise" />
-          <LegendItem color="var(--as-expected)" label="As expected" />
-          <LegendItem color="var(--underhyped)" label="Underhyped" />
-        </div>
+            {/* Color legend — vertical stack on mobile, full-width row on sm+. */}
+            <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
+              <LegendItem color="var(--overhyped)" label="Overhyped" />
+              <LegendItem color="var(--noise)" label="Noise" />
+              <LegendItem color="var(--as-expected)" label="As expected" />
+              <LegendItem color="var(--underhyped)" label="Underhyped" />
+            </div>
+          </>
+        )}
       </header>
 
+      {predicting && (
+        <GapPredict
+          teams={teams}
+          scope={scope}
+          onExit={() => setPredicting(false)}
+        />
+      )}
+
       {/* Chart frame — flat dark surface, no radial aurora glows. */}
+      {!predicting && (
       <div className="relative overflow-hidden rounded-[14px] border border-border bg-bg-1">
 
         {/* Axis label row.
@@ -191,6 +221,7 @@ export function GapChart({
           })}
         </AnimatedListReorder>
       </div>
+      )}
 
     </section>
   );
