@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
+import { Provenance, ProvInfo } from "@/components/provenance";
 import {
   Sheet,
   SheetContent,
@@ -10,7 +11,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { GapMode, StoryTag, TAG_LABEL, Team } from "@/lib/data";
+import { Dataset, GapMode, StoryTag, TAG_LABEL, Team } from "@/lib/data";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Date-only ("YYYY-MM-DD") formatter that avoids timezone drift.
+function fmtDateOnly(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+}
+// Full-ISO timestamp formatter (UTC) for the data_pulled_at stamp.
+function fmtStamp(iso: string): string {
+  const dt = new Date(iso);
+  return `${MONTHS[dt.getUTCMonth()]} ${dt.getUTCDate()}, ${dt.getUTCFullYear()}`;
+}
 
 const TAG_COLOR: Record<StoryTag, string> = {
   overhyped: "#f995b6",
@@ -26,6 +40,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   hypeWindowStart: string;
   hypeWindowEnd: string;
+  meta: Dataset["metadata"];
 };
 
 function shortDate(iso: string): string {
@@ -69,6 +84,7 @@ export function TeamSheet({
   onOpenChange,
   hypeWindowStart,
   hypeWindowEnd,
+  meta,
 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -82,6 +98,7 @@ export function TeamSheet({
             mode={mode}
             hypeWindowStart={hypeWindowStart}
             hypeWindowEnd={hypeWindowEnd}
+            meta={meta}
           />
         )}
         {!team && (
@@ -100,11 +117,13 @@ function TeamSheetBody({
   mode,
   hypeWindowStart,
   hypeWindowEnd,
+  meta,
 }: {
   team: Team;
   mode: GapMode;
   hypeWindowStart: string;
   hypeWindowEnd: string;
+  meta: Dataset["metadata"];
 }) {
   // All headline copy reads from `active` so the panel reflects the current
   // mode the user selected in the filter bar. The opposite-mode counterparts
@@ -134,6 +153,91 @@ function TeamSheetBody({
   const gap = active.gap;
   const modeLabel = mode === "season" ? "Season" : "Tournament";
   const otherModeLabel = mode === "season" ? "Tournament" : "Season";
+
+  // Provenance: trace every headline number back to its source and window.
+  const pulled = `Pulled ${fmtStamp(meta.data_pulled_at)}.`;
+  const hypeWin = `${fmtDateOnly(meta.hype_window_start)} to ${fmtDateOnly(meta.hype_window_end)}`;
+  const seasonWin = `${fmtDateOnly(meta.season_window_start)} to ${fmtDateOnly(meta.season_window_end)}`;
+  const year = meta.tournament_year;
+  const hypeSource: ProvInfo["lines"] =
+    mode === "season"
+      ? [
+          { k: "Source", v: "Google Trends, daily" },
+          { k: "Window", v: seasonWin },
+          { k: "Scale", v: "Standalone per team, intra-team only" },
+        ]
+      : [
+          { k: "Source", v: "Google Trends, daily" },
+          { k: "Window", v: hypeWin },
+          { k: "Scale", v: "Cross-batch normalized vs a reference team" },
+        ];
+  const prov = {
+    wins: {
+      label: "Wins",
+      lines: [
+        { k: "Source", v: `NCAA ${year} tournament results` },
+        { k: "Counts", v: "Every bracket win, play-in games included" },
+      ],
+      note: pulled,
+    },
+    hypeRank: { label: `${modeLabel} hype rank`, lines: hypeSource, note: pulled },
+    hypeIndex: { label: `${modeLabel} hype index`, lines: hypeSource, note: pulled },
+    gapActive: {
+      label: `${modeLabel} gap`,
+      lines: [
+        { k: "Formula", v: "Hype rank minus performance rank" },
+        { k: "Hype", v: mode === "season" ? `Trends, ${seasonWin}` : `Trends, ${hypeWin}` },
+        { k: "Outcome", v: mode === "season" ? "Season win percentage" : "Tournament wins" },
+      ],
+      note: pulled,
+    },
+    gapOther: {
+      label: `${otherModeLabel} gap`,
+      lines: [
+        { k: "Formula", v: "Hype rank minus performance rank" },
+        { k: "Hype", v: mode === "season" ? `Trends, ${hypeWin}` : `Trends, ${seasonWin}` },
+        { k: "Outcome", v: mode === "season" ? "Tournament wins" : "Season win percentage" },
+      ],
+      note: pulled,
+    },
+    hypeAccel: {
+      label: "Hype acceleration",
+      lines: [
+        { k: "Formula", v: "In-window mean over pre-tournament mean" },
+        { k: "Source", v: "Season hype curve (Trends)" },
+      ],
+      note: pulled,
+    },
+    perfRank: {
+      label: `${modeLabel} performance rank`,
+      lines:
+        mode === "season"
+          ? [
+              { k: "Source", v: "NCAA season standings" },
+              { k: "Rank by", v: "Season win percentage" },
+            ]
+          : [
+              { k: "Source", v: `NCAA ${year} results` },
+              { k: "Rank by", v: "Tournament wins" },
+            ],
+      note: pulled,
+    },
+    seasonWL: {
+      label: "Season record",
+      lines: [
+        { k: "Source", v: "NCAA season standings API" },
+        { k: "Note", v: "Overall, includes the tournament" },
+      ],
+      note: pulled,
+    },
+    perfAccel: {
+      label: "Performance acceleration",
+      lines: [
+        { k: "Formula", v: "Tournament win rate over pre-tournament win rate" },
+      ],
+      note: pulled,
+    },
+  } satisfies Record<string, ProvInfo>;
 
   return (
     <div
@@ -189,9 +293,12 @@ function TeamSheetBody({
 
       {/* Big gap callout — mode-aware. */}
       <div className="rounded-2xl border border-border bg-[rgba(255,255,255,0.025)] px-5 py-5 sm:shrink-0 sm:px-6 sm:py-3.5">
-        <div className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-ink-2 sm:mb-1.5">
+        <Provenance
+          info={prov.gapActive}
+          className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-ink-2 sm:mb-1.5"
+        >
           {modeLabel} Gap
-        </div>
+        </Provenance>
         <div
           className="font-display font-bold leading-none tracking-[-0.02em] tabular-nums"
           style={{
@@ -215,28 +322,33 @@ function TeamSheetBody({
         {/* Stat grid — 2 cols normally, single column in the compact row so the
             labels fit the narrower column. */}
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:shrink-0 compact:w-[316px] compact:grid-cols-1 compact:self-start">
-        <SheetStat label="Wins" value={String(team.wins)} />
-        <SheetStat label={`${modeLabel} hype rank`} value={`#${active.hypeRank}`} />
+        <SheetStat label="Wins" value={String(team.wins)} prov={prov.wins} />
+        <SheetStat label={`${modeLabel} hype rank`} value={`#${active.hypeRank}`} prov={prov.hypeRank} />
         <SheetStat
           label={`${modeLabel} hype index`}
           value={active.hypeIndex.toFixed(1)}
+          prov={prov.hypeIndex}
         />
         <SheetStat
           label={`${otherModeLabel} gap`}
           value={other.gap > 0 ? `+${other.gap}` : `${other.gap}`}
+          prov={prov.gapOther}
         />
         <SheetStat
           label="Hype accel"
           value={formatAcceleration(team.hype_acceleration)}
+          prov={prov.hypeAccel}
         />
-        <SheetStat label={`${modeLabel} perf rank`} value={`#${active.perfRank}`} />
+        <SheetStat label={`${modeLabel} perf rank`} value={`#${active.perfRank}`} prov={prov.perfRank} />
         <SheetStat
           label="Season W–L"
           value={`${team.season_wins}–${team.season_losses}`}
+          prov={prov.seasonWL}
         />
         <SheetStat
           label="Perf accel"
           value={formatAcceleration(team.performance_acceleration)}
+          prov={prov.perfAccel}
         />
       </div>
 
@@ -318,12 +430,26 @@ function ChartBlock({
   );
 }
 
-function SheetStat({ label, value }: { label: string; value: string }) {
+function SheetStat({
+  label,
+  value,
+  prov,
+}: {
+  label: string;
+  value: string;
+  prov?: ProvInfo;
+}) {
+  const labelCls =
+    "break-words font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2 sm:tracking-[0.08em] compact:text-[11px] compact:leading-tight compact:tracking-[0.04em]";
   return (
     <div className="bg-bg-1 px-5 py-3.5 sm:px-5 sm:py-2 compact:py-1.5">
-      <div className="break-words font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2 sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap sm:tracking-[0.08em] compact:overflow-visible compact:whitespace-normal compact:text-[11px] compact:leading-tight compact:tracking-[0.04em]">
-        {label}
-      </div>
+      {prov ? (
+        <Provenance info={prov} className={labelCls}>
+          <span>{label}</span>
+        </Provenance>
+      ) : (
+        <div className={labelCls}>{label}</div>
+      )}
       <div className="mt-1.5 font-display text-[22px] font-bold leading-none text-ink sm:mt-1 sm:text-[20px]">
         {value}
       </div>

@@ -457,6 +457,7 @@ export function AppShell({ data, view }: Props) {
         }}
         hypeWindowStart={dataset.metadata.hype_window_start}
         hypeWindowEnd={dataset.metadata.hype_window_end}
+        meta={dataset.metadata}
       />
     </>
   );
