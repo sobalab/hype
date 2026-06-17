@@ -116,11 +116,11 @@
 }
 
 :root {
-  /* Dark surface palette */
-  --bg: #08090d;
-  --bg-1: #0c0d12;
-  --bg-2: #11131a;
-  --bg-3: #181a20;
+  /* Dark surface palette — "charcoal" tone (matches TweaksPanel charcoal). */
+  --bg: #16161a;
+  --bg-1: #1c1c22;
+  --bg-2: #22232b;
+  --bg-3: #2a2c35;
   --surface: rgba(255, 255, 255, 0.03);
   --surface-hi: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.08);
@@ -142,8 +142,8 @@
   --as-expected: #efecaf;
 
   /* Live-tunable tokens (TweaksPanel writes these) */
-  --grid-opacity: 0.6;
-  --aurora-intensity: 0.55;
+  --grid-opacity: 0.8;
+  --aurora-intensity: 0.15;
 
   /* shadcn token mapping (dark) */
   --background: var(--bg);
@@ -260,6 +260,53 @@
   opacity: calc(var(--grid-opacity) * 0.8);
   mask-image: radial-gradient(ellipse 90% 80% at 50% 35%, #000 30%, transparent 95%);
   -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 35%, #000 30%, transparent 95%);
+}
+
+/* ── Fluid background field (liquid entrance + cursor reactive) ────
+   App-wide layer mounted behind content (z-0). Sits under the aurora-token
+   opacity so TweaksPanel's "Aurora glow" slider still governs it. The blobs
+   drift on a rAF loop and ease toward the cursor (spring-feel lerp); the
+   reduced-motion path renders a single settled field with no motion. */
+.fluid-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition:
+    opacity 1100ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 1100ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Intro handoff: start dimmed + slightly scaled, bloom to full when the
+   loader dismisses so first paint reads as one continuous liquid entrance. */
+.fluid-root[data-bloom="pending"] { opacity: 0; transform: scale(1.04); }
+.fluid-root[data-bloom="in"]      { opacity: 1; transform: none; }
+.fluid-field {
+  position: absolute;
+  inset: -12%;
+  isolation: isolate;
+  opacity: var(--aurora-intensity);
+}
+.fluid-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  filter: blur(72px);
+  will-change: transform;
+}
+.fluid-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@media (max-width: 767px) {
+  .fluid-blob { filter: blur(52px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fluid-root { transition: none; }
+  .fluid-blob { will-change: auto; }
 }
 
 /* ── Aurora glow under bars ───────────────────────────────────── */

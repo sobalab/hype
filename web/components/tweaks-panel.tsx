@@ -24,10 +24,10 @@ type Tweaks = {
 const DEFAULTS: Tweaks = {
   density: "compact",
   gridStyle: "dots",
-  gridIntensity: 0.6,
-  auroraIntensity: 0.55,
+  gridIntensity: 0.8,
+  auroraIntensity: 0.15,
   accentColor: "#1277de",
-  bgTone: "deep",
+  bgTone: "charcoal",
 };
 
 const STORAGE_KEY = "hyp3-tweaks";

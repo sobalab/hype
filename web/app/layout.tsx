@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Host_Grotesk } from "next/font/google";
 import "./globals.css";
 import { FloatingSearch } from "@/components/floating-search";
+import { FluidBackground } from "@/components/fluid-background";
 import { IntroLoader } from "@/components/intro-loader";
+import { TweaksPanel } from "@/components/tweaks-panel";
 
 const hostGrotesk = Host_Grotesk({
   variable: "--font-host",
@@ -27,11 +29,13 @@ export default function RootLayout({
       className={`${hostGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans font-medium">
+        <FluidBackground />
         <IntroLoader />
         <div className="relative z-[1] flex min-h-full flex-1 flex-col">
           {children}
         </div>
         <FloatingSearch />
+        {process.env.NODE_ENV === "development" && <TweaksPanel />}
       </body>
     </html>
   );

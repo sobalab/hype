@@ -25,6 +25,14 @@ export function IntroLoader() {
     if (fadingRef.current) return;
     fadingRef.current = true;
     setFading(true);
+    // Hand off to the fluid background: it blooms in while we fade out, so the
+    // intro reads as one continuous liquid entrance rather than two cuts.
+    try {
+      window.dispatchEvent(new CustomEvent("hyp3:intro-dismissed"));
+    } catch {
+      // CustomEvent unavailable in some very old engines; the background has a
+      // timed fallback, so this is non-fatal.
+    }
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     fadeTimer.current = setTimeout(() => setDone(true), FADE_MS);
   }, []);
