@@ -27,6 +27,12 @@ import {
   tagCounts,
 } from "@/lib/data";
 
+// Years offered by the nav stepper. Only 2026 is complete (has season-mode
+// fields + a finding); 2025 on disk is tournament-only and predates the season
+// schema, so it's intentionally excluded until backfilled. With a single year
+// the nav renders a static readout instead of a stepper.
+const YEARS = [2026];
+
 const VALID_TAGS = new Set<string>(TAG_ORDER);
 const VALID_REGIONS = new Set<string>(REGIONS);
 const VALID_ROUNDS = new Set<string>(ROUND_ORDER);
@@ -276,6 +282,17 @@ export function AppShell({ data, view }: Props) {
   // portable, account-free artifact. null = the default diagonal.
   const [betLine, setBetLine] = useState<BetLine | null>(null);
 
+  // Nav year stepper writes ?year=; YearSwapper picks it up and swaps the
+  // bundled dataset. usePathname/useRouter don't need a Suspense boundary
+  // (only useSearchParams does).
+  const yearRouter = useRouter();
+  const yearPathname = usePathname();
+  const onYear = (year: number) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("year", String(year));
+    yearRouter.replace(`${yearPathname}?${params.toString()}`, { scroll: false });
+  };
+
   useEffect(() => {
     hasClientHydrated = true;
     try {
@@ -421,7 +438,14 @@ export function AppShell({ data, view }: Props) {
         />
       </Suspense>
 
-      <TopNav dataset={dataset} />
+      <TopNav
+        dataset={dataset}
+        mode={gapMode}
+        setMode={setGapMode}
+        years={YEARS}
+        currentYear={dataset.metadata.tournament_year}
+        onYear={onYear}
+      />
 
       <div id="hyp3-content" className="scroll-mt-[var(--hyp3-nav-h,0px)]">
         <Filters
@@ -432,7 +456,7 @@ export function AppShell({ data, view }: Props) {
           selectedRound={selectedRound}
           tagCounts={counts}
           showRoundFilter={view !== "bracket" && view !== "timeline"}
-          showScope={view !== "gap"}
+          showScope={false}
           onToggleTag={onToggleTag}
           onSetRegion={setSelectedRegion}
           onSetRound={setSelectedRound}
