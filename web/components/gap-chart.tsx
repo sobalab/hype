@@ -1,31 +1,70 @@
 "use client";
 
 import { Icon } from "@/components/icon";
+import { AnimatedListReorder, AnimatedRow } from "@/components/motion";
 import { useReveal } from "@/components/motion/use-reveal";
 import { StoryTag, Team } from "@/lib/data";
 
-const TAG_COLOR: Record<StoryTag, string> = {
-  overhyped: "#f995b6",
-  underhyped: "#66e7d8",
-  as_expected: "#efecaf",
-  noise: "#b4b4ef",
+// RGB triples (not hex) so the morph can interpolate channel-by-channel and the
+// row can build rgba() strings at any alpha.
+const TAG_RGB: Record<StoryTag, [number, number, number]> = {
+  overhyped: [0xf9, 0x95, 0xb6],
+  underhyped: [0x66, 0xe7, 0xd8],
+  as_expected: [0xef, 0xec, 0xaf],
+  noise: [0xb4, 0xb4, 0xef],
 };
+
+type RGB = [number, number, number];
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function lerpRGB(a: RGB, b: RGB, t: number): RGB {
+  return [
+    Math.round(lerp(a[0], b[0], t)),
+    Math.round(lerp(a[1], b[1], t)),
+    Math.round(lerp(a[2], b[2], t)),
+  ];
+}
 
 type Props = {
   teams: Team[];
   maxAbsGap: number;
+  /** 0 = tournament, 1 = season. Each bar interpolates between its two ends. */
+  scope: number;
+  onScopeChange: (v: number) => void;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
 
-export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
+export function GapChart({
+  teams,
+  maxAbsGap,
+  scope,
+  onScopeChange,
+  selectedTeam,
+  onSelect,
+}: Props) {
   // Staggered entrance on mount / route navigation. Window covers the last
   // row's (delay + animation); after it closes, filter/scope changes re-render
   // without re-animating.
   const revealing = useReveal(1500);
-  const sorted = [...teams].sort((a, b) => a.gap - b.gap);
 
-  if (sorted.length === 0) {
+  // Interpolate each team's gap between its tournament and season ends, then
+  // sort by the live value so the list reorders as the scope is scrubbed.
+  const rows = teams
+    .map((t) => {
+      const gapNow = Math.round(lerp(t.gap, t.season_gap, scope));
+      return {
+        team: t,
+        gapNow,
+        color: lerpRGB(TAG_RGB[t.story_tag], TAG_RGB[t.season_story_tag], scope),
+      };
+    })
+    .sort((a, b) => a.gapNow - b.gapNow);
+
+  if (rows.length === 0) {
     return (
       <div className="mx-auto max-w-[1180px] px-5 py-24 text-center text-base text-ink-2 sm:px-7">
         No teams match the current filters.
@@ -63,7 +102,7 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
               className="font-display font-bold leading-none text-ink"
               style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
             >
-              {sorted.length}
+              {rows.length}
             </span>
             <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
               Teams
@@ -74,6 +113,10 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
             details.
           </p>
         </div>
+
+        {/* Scope morph — drag from tournament to season and watch every bar
+            flow between its two positions. */}
+        <ScopeSlider value={scope} onChange={onScopeChange} />
 
         {/* Color legend — vertical stack on mobile, full-width row on sm+. */}
         <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
@@ -123,27 +166,79 @@ export function GapChart({ teams, maxAbsGap, selectedTeam, onSelect }: Props) {
         />
 
         {/* Rows — tightly stacked (gap-px) so the diverging bars read as one
-            continuous pyramid shape, condensing 68 teams into ~half the height. */}
-        <div className="relative z-[1] flex flex-col gap-px px-3 py-3 sm:px-6 sm:py-4">
-          {sorted.map((t, i) => {
-            const widthPct = (Math.abs(t.gap) / maxAbsGap) * 100;
+            continuous pyramid shape. AnimatedListReorder springs each row to
+            its new slot when the scope scrub re-sorts the list. */}
+        <AnimatedListReorder
+          id="gap-rows"
+          className="relative z-[1] flex flex-col gap-px px-3 py-3 sm:px-6 sm:py-4"
+        >
+          {rows.map((r, i) => {
+            const widthPct = (Math.abs(r.gapNow) / maxAbsGap) * 100;
             return (
-              <DivRow
-                key={t.team}
-                team={t}
-                widthPct={widthPct}
-                isOver={t.gap < 0}
-                color={TAG_COLOR[t.story_tag]}
-                isSel={selectedTeam === t.team}
-                onSelect={onSelect}
-                revealDelay={revealing ? Math.min(i * 13, 720) : null}
-              />
+              <AnimatedRow key={r.team.team} hoverLift={false}>
+                <DivRow
+                  team={r.team}
+                  gapNow={r.gapNow}
+                  widthPct={widthPct}
+                  isOver={r.gapNow < 0}
+                  color={r.color}
+                  isSel={selectedTeam === r.team.team}
+                  onSelect={onSelect}
+                  revealDelay={revealing ? Math.min(i * 13, 720) : null}
+                />
+              </AnimatedRow>
             );
           })}
-        </div>
+        </AnimatedListReorder>
       </div>
 
     </section>
+  );
+}
+
+function ScopeSlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const pct = Math.round(value * 100);
+  const caption =
+    value <= 0.02
+      ? "15-day hype window vs. tournament wins"
+      : value >= 0.98
+        ? "Full-season hype vs. season win %"
+        : `Blending ${100 - pct}% tournament / ${pct}% season`;
+  return (
+    <div className="flex w-full flex-col gap-2.5 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-4 py-3">
+      <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.12em]">
+        <span className={value < 0.5 ? "text-core-bright" : "text-ink-2"}>
+          Tournament
+        </span>
+        <span className="text-ink-3">Scope</span>
+        <span className={value >= 0.5 ? "text-core-bright" : "text-ink-2"}>
+          Season
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.01}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label="Scope: drag from tournament to season"
+        aria-valuetext={caption}
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full accent-core-bright"
+        style={{
+          background: `linear-gradient(90deg, var(--core) ${pct}%, var(--border-hi) ${pct}%)`,
+        }}
+      />
+      <div className="font-mono text-[11px] tracking-[0.08em] text-ink-2">
+        {caption}
+      </div>
+    </div>
   );
 }
 
@@ -166,17 +261,21 @@ function LegendItem({
 
 type RowProps = {
   team: Team;
+  /** Interpolated, rounded gap shown in the pill. */
+  gapNow: number;
   widthPct: number;
   isOver: boolean;
-  color: string;
+  color: RGB;
   isSel: boolean;
   onSelect: (t: Team) => void;
   /** ms delay for the entrance animation, or null when not revealing. */
   revealDelay: number | null;
 };
 
-function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }: RowProps) {
-  const gap = team.gap;
+function DivRow({ team, gapNow, widthPct, isOver, color, isSel, onSelect, revealDelay }: RowProps) {
+  const [r, g, b] = color;
+  const rgba = (a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
+  const solid = `rgb(${r}, ${g}, ${b})`;
   const animate = revealDelay != null;
   const delayStyle = animate ? { animationDelay: `${revealDelay}ms` } : undefined;
   return (
@@ -201,10 +300,10 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }:
               }`}
               style={{
                 width: `${widthPct}%`,
-                background: `linear-gradient(90deg, ${color}14, ${color}55 70%, ${color})`,
+                background: `linear-gradient(90deg, ${rgba(0.08)}, ${rgba(0.33)} 70%, ${solid})`,
                 boxShadow: isSel
-                  ? `inset 0 0 0 1px ${color}cc`
-                  : `inset 0 0 0 1px ${color}66`,
+                  ? `inset 0 0 0 1px ${rgba(0.8)}`
+                  : `inset 0 0 0 1px ${rgba(0.4)}`,
                 ...(animate
                   ? { transformOrigin: "right", animationDelay: `${revealDelay}ms` }
                   : null),
@@ -220,12 +319,12 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }:
               <span
                 className="inline-flex min-w-[32px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-1.5 py-px font-mono text-xs font-bold tabular-nums tracking-[0.02em] shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
                 style={{
-                  borderColor: `${color}66`,
-                  color,
+                  borderColor: rgba(0.4),
+                  color: solid,
                   textShadow: "0 0 10px currentColor",
                 }}
               >
-                {gap}
+                {gapNow}
               </span>
             </div>
           </>
@@ -243,10 +342,10 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }:
               }`}
               style={{
                 width: `${widthPct}%`,
-                background: `linear-gradient(270deg, ${color}14, ${color}55 70%, ${color})`,
+                background: `linear-gradient(270deg, ${rgba(0.08)}, ${rgba(0.33)} 70%, ${solid})`,
                 boxShadow: isSel
-                  ? `inset 0 0 0 1px ${color}cc`
-                  : `inset 0 0 0 1px ${color}66`,
+                  ? `inset 0 0 0 1px ${rgba(0.8)}`
+                  : `inset 0 0 0 1px ${rgba(0.4)}`,
                 ...(animate
                   ? { transformOrigin: "left", animationDelay: `${revealDelay}ms` }
                   : null),
@@ -256,12 +355,12 @@ function DivRow({ team, widthPct, isOver, color, isSel, onSelect, revealDelay }:
               <span
                 className="inline-flex min-w-[32px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-1.5 py-px font-mono text-xs font-bold tabular-nums tracking-[0.02em] shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
                 style={{
-                  borderColor: `${color}66`,
-                  color,
+                  borderColor: rgba(0.4),
+                  color: solid,
                   textShadow: "0 0 10px currentColor",
                 }}
               >
-                +{gap}
+                +{gapNow}
               </span>
               <span className="min-w-0 flex-1 truncate text-right font-sans text-[13px] font-medium tracking-[0.01em] text-ink md:text-sm">
                 {team.team}

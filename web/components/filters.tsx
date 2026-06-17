@@ -32,6 +32,9 @@ type Props = {
   selectedRound: Round;
   tagCounts: Record<StoryTag, number>;
   showRoundFilter?: boolean;
+  /** Divergent replaces the binary scope toggle with its own slider, so the
+      toggle is hidden there. Defaults to shown for the other views. */
+  showScope?: boolean;
   /** When true, the sticky bar fades + lifts off-screen (used when the
       footer enters viewport so chrome doesn't float over it). */
   hidden?: boolean;
@@ -49,6 +52,7 @@ export function Filters({
   selectedRound,
   tagCounts,
   showRoundFilter = true,
+  showScope = true,
   hidden = false,
   onToggleTag,
   onSetRegion,
@@ -126,11 +130,15 @@ export function Filters({
         {/* PRIMARY ROW — Scope + Story.
             Mobile: stack vertically. md+: lay out inline with generous gap. */}
         <div className="flex flex-col gap-10 md:flex-row md:flex-wrap md:items-start md:gap-10">
-          <PrimaryGroup marker="A" label="SCOPE">
-            <ModeToggle mode={mode} setMode={setMode} />
-          </PrimaryGroup>
+          {showScope && (
+            <>
+              <PrimaryGroup marker="A" label="SCOPE">
+                <ModeToggle mode={mode} setMode={setMode} />
+              </PrimaryGroup>
 
-          <div className="hidden self-stretch border-r border-border md:block" />
+              <div className="hidden self-stretch border-r border-border md:block" />
+            </>
+          )}
 
           <PrimaryGroup
             marker="B"

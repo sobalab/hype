@@ -224,6 +224,23 @@ export function AppShell({ data, view }: Props) {
   });
   const skipFirstModeWrite = useRef(true);
 
+  // Continuous scope for the Divergent view (0 = tournament, 1 = season). It
+  // stays in lockstep with the discrete `gapMode` that the other views,
+  // filters, and the URL still use: scrubbing past the midpoint flips the
+  // mode, and any external mode change snaps the scope to that end.
+  const [scope, setScope] = useState<number>(gapMode === "season" ? 1 : 0);
+  useEffect(() => {
+    const end = gapMode === "season" ? 1 : 0;
+    setScope((s) =>
+      (s < 0.5 ? "tournament" : "season") === gapMode ? s : end,
+    );
+  }, [gapMode]);
+  const onScope = (v: number) => {
+    setScope(v);
+    const m: GapMode = v < 0.5 ? "tournament" : "season";
+    setGapMode((prev) => (prev === m ? prev : m));
+  };
+
   useEffect(() => {
     hasClientHydrated = true;
     try {
@@ -264,6 +281,30 @@ export function AppShell({ data, view }: Props) {
 
   const counts = useMemo(() => tagCounts(projectedTeams), [projectedTeams]);
   const scale = useMemo(() => maxAbsGap(projectedTeams), [projectedTeams]);
+
+  // Divergent view interpolates between each team's tournament and season gap,
+  // so it needs the ORIGINAL team objects (both endpoints) rather than the
+  // mode-projected ones. Membership still follows the discrete mode's story_tag
+  // so filters and counts stay coherent across the morph.
+  const filteredOriginalTeams = useMemo(() => {
+    const tagRegion = dataset.teams.filter((t) => {
+      const tag = projectTeamForMode(t, gapMode).story_tag;
+      if (!selectedTags.has(tag)) return false;
+      if (selectedRegion !== "all" && t.region !== selectedRegion) return false;
+      return true;
+    });
+    return applyRoundFilter(tagRegion, selectedRound);
+  }, [dataset.teams, gapMode, selectedTags, selectedRegion, selectedRound]);
+
+  // Axis scale spans BOTH modes so bars don't rescale mid-scrub (the
+  // full-dataset anchoring rule, extended across the morph).
+  const gapScale = useMemo(() => {
+    let m = 0;
+    for (const t of dataset.teams) {
+      m = Math.max(m, Math.abs(t.gap), Math.abs(t.season_gap));
+    }
+    return m || 1;
+  }, [dataset.teams]);
 
   const maxDailyHype = useMemo(() => {
     let m = 0;
@@ -354,6 +395,7 @@ export function AppShell({ data, view }: Props) {
           selectedRound={selectedRound}
           tagCounts={counts}
           showRoundFilter={view !== "bracket" && view !== "timeline"}
+          showScope={view !== "gap"}
           onToggleTag={onToggleTag}
           onSetRegion={setSelectedRegion}
           onSetRound={setSelectedRound}
@@ -363,8 +405,10 @@ export function AppShell({ data, view }: Props) {
 
         {view === "gap" && (
           <GapChart
-            teams={filteredTeams}
-            maxAbsGap={scale}
+            teams={filteredOriginalTeams}
+            maxAbsGap={gapScale}
+            scope={scope}
+            onScopeChange={onScope}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
