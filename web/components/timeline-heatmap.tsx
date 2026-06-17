@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Icon } from "@/components/icon";
@@ -58,6 +58,8 @@ type Props = {
   selectionSundayDate?: string;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
+  /** Optional control (the 2D/3D lens toggle) rendered in the header. */
+  lensToggle?: ReactNode;
 };
 
 type Bucket = {
@@ -117,6 +119,7 @@ export function TimelineHeatmap({
   selectionSundayDate = DEFAULT_SELECTION_SUNDAY,
   selectedTeam,
   onSelect,
+  lensToggle,
 }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("gap");
   const isMobile = useIsMobile();
@@ -251,8 +254,10 @@ export function TimelineHeatmap({
           </div>
         </div>
 
-        {/* Sort */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col items-start gap-4 md:items-end">
+          {lensToggle}
+          {/* Sort */}
+          <div className="flex flex-col gap-1.5">
           <span className="font-mono text-sm uppercase tracking-[0.18em] text-ink-3">
             SORT
           </span>
@@ -275,6 +280,7 @@ export function TimelineHeatmap({
                 </button>
               );
             })}
+          </div>
           </div>
         </div>
       </header>

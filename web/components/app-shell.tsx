@@ -9,7 +9,7 @@ import { Footer } from "@/components/footer";
 import { GapChart } from "@/components/gap-chart";
 import { BetLine, DEFAULT_LINE, ScatterChartView } from "@/components/scatter-chart";
 import { TeamSheet } from "@/components/team-sheet";
-import { TimelineHeatmap } from "@/components/timeline-heatmap";
+import { TimelineView } from "@/components/timeline-view";
 import { TopNav } from "@/components/top-nav";
 import {
   Dataset,
@@ -486,7 +486,7 @@ export function AppShell({ data, view }: Props) {
         )}
 
         {view === "timeline" && (
-          <TimelineHeatmap
+          <TimelineView
             teams={filteredTeams}
             mode={gapMode}
             windowDates={windowDates}
