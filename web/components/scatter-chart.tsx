@@ -54,12 +54,19 @@ const SHORT_ROUND_LABELS = [
 
 // The user's expectation line: expected wins at hype 0 (y0) and at hype 100
 // (y1). The default {0, 6} is the original diagonal.
-type BetLine = { y0: number; y1: number };
-const DEFAULT_LINE: BetLine = { y0: 0, y1: 6 };
+export type BetLine = { y0: number; y1: number };
+export const DEFAULT_LINE: BetLine = { y0: 0, y1: 6 };
 const KEY_STEP = 0.25;
+const r2 = (n: number) => Math.round(n * 100) / 100;
+const isDefaultLine = (l: BetLine) =>
+  l.y0 === DEFAULT_LINE.y0 && l.y1 === DEFAULT_LINE.y1;
 
 type Props = {
   teams: Team[];
+  /** Resolved line (app-shell owns it for URL portability). */
+  value: BetLine;
+  /** Commit a finished gesture; null means "reset to default diagonal". */
+  onCommit: (line: BetLine | null) => void;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
@@ -76,12 +83,14 @@ function useIsMobile() {
   return m;
 }
 
-export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
+export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect }: Props) {
   const isMobile = useIsMobile();
   // Dots pop in on mount / route navigation; closes before filter/scope edits.
   const revealing = useReveal(1400);
 
-  const [line, setLine] = useState<BetLine>(DEFAULT_LINE);
+  // Local draft so dragging is smooth; the resolved line is committed to
+  // app-shell (and the URL) only on gesture end, not on every pointer move.
+  const [line, setLine] = useState<BetLine>(value);
   const [focusedHandle, setFocusedHandle] = useState<"left" | "right" | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<{
@@ -90,6 +99,17 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
     startY1: number;
     startWins: number;
   } | null>(null);
+
+  // Adopt an externally-restored value (shared link / URL) unless mid-drag.
+  useEffect(() => {
+    if (dragRef.current) return;
+    setLine((cur) => (cur.y0 === value.y0 && cur.y1 === value.y1 ? cur : value));
+  }, [value.y0, value.y1]);
+
+  const commit = (l: BetLine) => {
+    const rounded = { y0: r2(l.y0), y1: r2(l.y1) };
+    onCommit(isDefaultLine(rounded) ? null : rounded);
+  };
 
   const isCustom = line.y0 !== DEFAULT_LINE.y0 || line.y1 !== DEFAULT_LINE.y1;
 
@@ -184,12 +204,14 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
   };
 
   const endDrag = (e: React.PointerEvent) => {
+    const wasDragging = dragRef.current !== null;
     dragRef.current = null;
     try {
       (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
     } catch {
       // pointer may already be released
     }
+    if (wasDragging) commit(line);
   };
 
   const onHandleKey = (which: "left" | "right", e: React.KeyboardEvent) => {
@@ -198,11 +220,12 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
     else if (e.key === "ArrowDown" || e.key === "ArrowLeft") delta = -KEY_STEP;
     else return;
     e.preventDefault();
-    setLine((L) =>
+    const next =
       which === "left"
-        ? { ...L, y0: clamp(L.y0 + delta, 0, 6) }
-        : { ...L, y1: clamp(L.y1 + delta, 0, 6) },
-    );
+        ? { ...line, y0: clamp(line.y0 + delta, 0, 6) }
+        : { ...line, y1: clamp(line.y1 + delta, 0, 6) };
+    setLine(next);
+    commit(next);
   };
 
   const lx = xFor(0);
@@ -523,7 +546,14 @@ export function ScatterChartView({ teams, selectedTeam, onSelect }: Props) {
         </div>
 
         <div className="order-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:w-[280px] lg:shrink-0 lg:flex-col lg:flex-nowrap lg:gap-4">
-          <BetCard miss={miss} isCustom={isCustom} onReset={() => setLine(DEFAULT_LINE)} />
+          <BetCard
+            miss={miss}
+            isCustom={isCustom}
+            onReset={() => {
+              setLine(DEFAULT_LINE);
+              onCommit(null);
+            }}
+          />
           <CalloutGroup label="Most underhyped" tag="underhyped" teams={calls.above} arrow="up-arrow" />
           <CalloutGroup label="Most overhyped" tag="overhyped" teams={calls.below} arrow="down-arrow" />
         </div>
@@ -541,6 +571,16 @@ function BetCard({
   isCustom: boolean;
   onReset: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+  const copyLink = () => {
+    try {
+      navigator.clipboard?.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // clipboard may be unavailable; the URL is still shareable from the bar
+    }
+  };
   return (
     <div className="min-w-[200px] flex-1 rounded-[10px] border border-core-bright/40 bg-[rgba(18,119,222,0.10)] px-4 py-3 lg:flex-none">
       <div className="mb-2 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
@@ -558,15 +598,26 @@ function BetCard({
         Lower is a tighter fit. Drag the ends or use arrow keys when a handle is
         focused.
       </p>
-      <button
-        type="button"
-        onClick={onReset}
-        disabled={!isCustom}
-        className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 font-display text-[12px] font-black uppercase tracking-[0.1em] text-ink-1 transition-colors enabled:hover:border-border-hi enabled:hover:text-ink disabled:opacity-40"
-      >
-        <Icon name="reset" size={12} />
-        Reset to diagonal
-      </button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={copyLink}
+          disabled={!isCustom}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-core-bright/50 bg-[rgba(18,119,222,0.16)] px-2.5 py-1 font-display text-[12px] font-black uppercase tracking-[0.1em] text-core-bright transition-colors enabled:hover:bg-[rgba(18,119,222,0.26)] disabled:opacity-40"
+        >
+          <Icon name="bullet" size={6} className="inline-block" />
+          {copied ? "Link copied" : "Copy bet link"}
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={!isCustom}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 font-display text-[12px] font-black uppercase tracking-[0.1em] text-ink-1 transition-colors enabled:hover:border-border-hi enabled:hover:text-ink disabled:opacity-40"
+        >
+          <Icon name="reset" size={12} />
+          Reset
+        </button>
+      </div>
     </div>
   );
 }

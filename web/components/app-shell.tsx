@@ -7,7 +7,7 @@ import { BracketTree } from "@/components/bracket-tree";
 import { Filters } from "@/components/filters";
 import { Footer } from "@/components/footer";
 import { GapChart } from "@/components/gap-chart";
-import { ScatterChartView } from "@/components/scatter-chart";
+import { BetLine, DEFAULT_LINE, ScatterChartView } from "@/components/scatter-chart";
 import { TeamSheet } from "@/components/team-sheet";
 import { TimelineHeatmap } from "@/components/timeline-heatmap";
 import { TopNav } from "@/components/top-nav";
@@ -85,13 +85,26 @@ type UrlSyncState = {
   selectedRound: Round;
   selectedTeam: Team | null;
   gapMode: GapMode;
+  betLine: BetLine | null;
   teams: Team[];
   setSelectedTags: (s: Set<StoryTag>) => void;
   setSelectedRegion: (r: Region | "all") => void;
   setSelectedRound: (r: Round) => void;
   setSelectedTeam: (t: Team | null) => void;
   setGapMode: (m: GapMode) => void;
+  setBetLine: (l: BetLine | null) => void;
 };
+
+function parseLineParam(raw: string | null): BetLine | null {
+  if (!raw) return null;
+  const parts = raw.split(",").map(Number);
+  if (parts.length !== 2 || !parts.every((n) => Number.isFinite(n))) return null;
+  const clampWins = (n: number) => Math.max(0, Math.min(6, n));
+  const line = { y0: clampWins(parts[0]), y1: clampWins(parts[1]) };
+  // A line equal to the default diagonal is "no bet" and carries no param.
+  if (line.y0 === DEFAULT_LINE.y0 && line.y1 === DEFAULT_LINE.y1) return null;
+  return line;
+}
 
 function UrlSync({
   selectedTags,
@@ -99,12 +112,14 @@ function UrlSync({
   selectedRound,
   selectedTeam,
   gapMode,
+  betLine,
   teams,
   setSelectedTags,
   setSelectedRegion,
   setSelectedRound,
   setSelectedTeam,
   setGapMode,
+  setBetLine,
 }: UrlSyncState) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -162,6 +177,18 @@ function UrlSync({
       }
     }
 
+    const expectedLine = parseLineParam(searchParams.get("line"));
+    const lineSame =
+      (expectedLine === null && betLine === null) ||
+      (!!expectedLine &&
+        !!betLine &&
+        expectedLine.y0 === betLine.y0 &&
+        expectedLine.y1 === betLine.y1);
+    if (!lineSame) {
+      setBetLine(expectedLine);
+      didSeed = true;
+    }
+
     if (didSeed) readJustSeeded.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, teams]);
@@ -193,6 +220,9 @@ function UrlSync({
     if (gapMode === "tournament") params.delete("mode");
     else params.set("mode", gapMode);
 
+    if (!betLine) params.delete("line");
+    else params.set("line", `${betLine.y0},${betLine.y1}`);
+
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
@@ -203,6 +233,7 @@ function UrlSync({
     selectedRound,
     selectedTeam,
     gapMode,
+    betLine,
     pathname,
     router,
     searchParams,
@@ -240,6 +271,10 @@ export function AppShell({ data, view }: Props) {
     const m: GapMode = v < 0.5 ? "tournament" : "season";
     setGapMode((prev) => (prev === m ? prev : m));
   };
+
+  // Scatter "draw your bet" line, lifted here so it survives in the URL as a
+  // portable, account-free artifact. null = the default diagonal.
+  const [betLine, setBetLine] = useState<BetLine | null>(null);
 
   useEffect(() => {
     hasClientHydrated = true;
@@ -375,12 +410,14 @@ export function AppShell({ data, view }: Props) {
           selectedRound={selectedRound}
           selectedTeam={selectedTeam}
           gapMode={gapMode}
+          betLine={betLine}
           teams={dataset.teams}
           setSelectedTags={setSelectedTags}
           setSelectedRegion={setSelectedRegion}
           setSelectedRound={setSelectedRound}
           setSelectedTeam={setSelectedTeam}
           setGapMode={setGapMode}
+          setBetLine={setBetLine}
         />
       </Suspense>
 
@@ -417,6 +454,8 @@ export function AppShell({ data, view }: Props) {
         {view === "scatter" && (
           <ScatterChartView
             teams={filteredTeams}
+            value={betLine ?? DEFAULT_LINE}
+            onCommit={setBetLine}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
