@@ -201,6 +201,14 @@ The web app's import target is `web/data.json` regardless of which year is bundl
 
 For Vercel: enable "Include source files outside of the Root Directory in the Build Step" so the prebuild script can read `../data/<year>.json`.
 
+### Dev server dist dir lives outside iCloud (`.next.nosync`)
+
+The repo sits under `~/Documents`, which macOS syncs to iCloud. iCloud's sync daemon (`bird`) evicts/relocates Next's rapidly-churning **dev** build artifacts mid-write, which corrupts the dev server: `Cannot find module .next/dev/server/middleware-manifest.json`, `ENOENT` on `_buildManifest.js.tmp`, `Persisting failed: Another write batch or compaction is already active`, and `.next/dev` getting deleted the instant a request comes in. It is intermittent and affects **both** Turbopack and webpack dev; production `next build` (one big write, not churn) is unaffected.
+
+The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"` when `HYP3_DEV=1`, and the `dev` script in [web/package.json](web/package.json) is `HYP3_DEV=1 next dev`. iCloud skips anything ending in `.nosync`, so dev output stays unsynced and stable. Build and Vercel keep the standard `.next` (env unset). The separate dirs also stop a local `next build` from clobbering a running dev server. `.next.nosync/` is gitignored.
+
+**Do not "simplify" the conditional `distDir` away** — without it the dev server is unusable on any iCloud-synced checkout. If a dev server wedges anyway, the recovery is: kill every `next dev`/`next-server` process (never run two against one dist dir), `rm -rf .next.nosync`, restart a single server.
+
 ### File map
 
 | File | Purpose |

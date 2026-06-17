@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "mkdir -p public/data && cp ../data/2026.json ./data.json && cp ../data/*.json ./public/data/",
-    "dev": "next dev",
+    "dev": "HYP3_DEV=1 next dev",
     "prebuild": "mkdir -p public/data && cp ../data/2026.json ./data.json && cp ../data/*.json ./public/data/",
     "build": "next build",
     "start": "next start",
