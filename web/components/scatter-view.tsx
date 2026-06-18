@@ -71,7 +71,7 @@ export function ScatterView({ teams, mode, value, onCommit, selectedTeam, onSele
             "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
         }}
       >
-        <header className="mb-8 flex items-start justify-between gap-4">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
               <span className="text-core-bright">02</span> /{" "}

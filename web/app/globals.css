@@ -219,6 +219,11 @@
   }
   html {
     @apply font-sans;
+    /* Also clip horizontal overflow at the root: body's clip stops body
+       painting past the viewport, but the html element can still scroll into
+       overflow from in-flow content (e.g. a wide flex child poking out before
+       its own scroller bounds it). `clip` (not `hidden`) keeps sticky working. */
+    overflow-x: clip;
   }
   h1, h2, h3, h4, h5, h6, .font-display, .font-heading {
     font-family: var(--font-display);

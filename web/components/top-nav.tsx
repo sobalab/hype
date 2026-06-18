@@ -195,8 +195,9 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
 
         <span aria-hidden className="cn-divider hidden lg:block" />
 
-        {/* Channel */}
-        <Group label="Channel" className="min-w-0">
+        {/* Channel — full-width own line below lg so the horizontal scroller is
+            bounded by the container (no clipping); inline on desktop. */}
+        <Group label="Channel" className="min-w-0 w-full lg:w-auto">
           <div className="-mx-1 max-w-full overflow-x-auto px-1 no-scrollbar">
             <div
               ref={trackRef}

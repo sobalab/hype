@@ -244,7 +244,7 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
       }}
     >
       <header className="mb-8 flex flex-col gap-10 md:mb-10 md:gap-12">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
               <span className="text-core-bright">02</span> /{" "}
