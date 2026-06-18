@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icon";
 import { useReveal } from "@/components/motion/use-reveal";
 import { StoryTag, Team } from "@/lib/data";
+import { useIsMobile } from "@/lib/use-is-mobile";
 
 const TAG_COLOR: Record<StoryTag, string> = {
   overhyped: "#f995b6",
@@ -72,18 +73,6 @@ type Props = {
   /** Optional control (the 2D/3D lens toggle) rendered in the header. */
   lensToggle?: ReactNode;
 };
-
-function useIsMobile() {
-  const [m, setM] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const u = () => setM(mq.matches);
-    u();
-    mq.addEventListener("change", u);
-    return () => mq.removeEventListener("change", u);
-  }, []);
-  return m;
-}
 
 export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect, lensToggle }: Props) {
   const isMobile = useIsMobile();

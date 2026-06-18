@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import { Provenance, ProvInfo } from "@/components/provenance";
+import { useIsMobile } from "@/lib/use-is-mobile";
 import {
   Sheet,
   SheetContent,
@@ -455,18 +456,6 @@ function SheetStat({
       </div>
     </div>
   );
-}
-
-function useIsMobile() {
-  const [m, setM] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const u = () => setM(mq.matches);
-    u();
-    mq.addEventListener("change", u);
-    return () => mq.removeEventListener("change", u);
-  }, []);
-  return m;
 }
 
 function formatHoverDate(iso: string): string {

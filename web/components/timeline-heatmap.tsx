@@ -1,11 +1,12 @@
 "use client";
 
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, type ReactNode, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Icon } from "@/components/icon";
 import { useReveal } from "@/components/motion/use-reveal";
 import { GapMode, StoryTag, Team } from "@/lib/data";
+import { useIsMobile } from "@/lib/use-is-mobile";
 
 const TAG_COLOR: Record<StoryTag, string> = {
   overhyped: "#f995b6",
@@ -34,18 +35,6 @@ function cellColor(intensity: number): string {
     Math.floor(intensity * HEAT_STOPS.length)
   );
   return HEAT_STOPS[idx];
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return isMobile;
 }
 
 const MOBILE_WINDOW_SIZE = 5;
@@ -122,7 +111,7 @@ export function TimelineHeatmap({
   lensToggle,
 }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("gap");
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(767);
   const [windowStart, setWindowStart] = useState(0);
 
   const sortedTeams = useMemo(
