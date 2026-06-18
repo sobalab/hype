@@ -1,5 +1,7 @@
 "use client";
 
+import { type ReactNode } from "react";
+
 import { Icon } from "@/components/icon";
 import { useReveal } from "@/components/motion/use-reveal";
 import { Region, REGIONS, StoryTag, Team } from "@/lib/data";
@@ -11,9 +13,9 @@ const TAG_COLOR: Record<StoryTag, string> = {
   noise: "#b4b4ef",
 };
 
-const CANONICAL_SEED_ORDER = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15];
+export const CANONICAL_SEED_ORDER = [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15];
 
-type RegionTree = {
+export type RegionTree = {
   r64: (Team | null)[];
   r32: (Team | null)[];
   s16: (Team | null)[];
@@ -30,7 +32,7 @@ function pickWinner(a: Team | null, b: Team | null, minWins: number): Team | nul
   return a.wins >= b.wins ? a : b;
 }
 
-function buildRegionTree(allTeams: Team[], region: Region): RegionTree {
+export function buildRegionTree(allTeams: Team[], region: Region): RegionTree {
   const inRegion = allTeams.filter(
     (t) => t.region === region && t.made_main_bracket
   );
@@ -55,6 +57,8 @@ type Props = {
   selectedRegion: Region | "all";
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
+  /** Optional control (the 2D/3D lens toggle) rendered in the header. */
+  lensToggle?: ReactNode;
 };
 
 export function BracketTree({
@@ -63,6 +67,7 @@ export function BracketTree({
   selectedRegion,
   selectedTeam,
   onSelect,
+  lensToggle,
 }: Props) {
   const visibleTagSet = new Set<StoryTag>(filteredTeams.map((t) => t.story_tag));
   const regionsToShow: Region[] =
@@ -84,6 +89,7 @@ export function BracketTree({
       }}
     >
       <header className="mb-8 flex flex-col gap-6 md:mb-10 md:gap-8">
+        <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-10 md:gap-12">
           <div>
             <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
@@ -115,6 +121,8 @@ export function BracketTree({
               The bracket as it played out, recolored by who was oversold.
             </p>
           </div>
+        </div>
+          {lensToggle}
         </div>
 
         <Legend />

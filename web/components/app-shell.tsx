@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { BracketTree } from "@/components/bracket-tree";
+import { BracketView } from "@/components/bracket-view";
 import { Filters } from "@/components/filters";
 import { Footer } from "@/components/footer";
 import { GapChart } from "@/components/gap-chart";
@@ -499,7 +499,7 @@ export function AppShell({ data, view }: Props) {
         )}
 
         {view === "bracket" && (
-          <BracketTree
+          <BracketView
             teams={projectedTeams}
             filteredTeams={filteredTeams}
             selectedRegion={selectedRegion}
