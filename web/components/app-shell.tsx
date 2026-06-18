@@ -7,7 +7,8 @@ import { BracketTree } from "@/components/bracket-tree";
 import { Filters } from "@/components/filters";
 import { Footer } from "@/components/footer";
 import { GapChart } from "@/components/gap-chart";
-import { BetLine, DEFAULT_LINE, ScatterChartView } from "@/components/scatter-chart";
+import { BetLine, DEFAULT_LINE } from "@/components/scatter-chart";
+import { ScatterView } from "@/components/scatter-view";
 import { TeamSheet } from "@/components/team-sheet";
 import { TimelineView } from "@/components/timeline-view";
 import { TopNav } from "@/components/top-nav";
@@ -476,8 +477,9 @@ export function AppShell({ data, view }: Props) {
         )}
 
         {view === "scatter" && (
-          <ScatterChartView
+          <ScatterView
             teams={filteredTeams}
+            mode={gapMode}
             value={betLine ?? DEFAULT_LINE}
             onCommit={setBetLine}
             selectedTeam={selectedTeam?.team ?? null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import { useReveal } from "@/components/motion/use-reveal";
@@ -69,6 +69,8 @@ type Props = {
   onCommit: (line: BetLine | null) => void;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
+  /** Optional control (the 2D/3D lens toggle) rendered in the header. */
+  lensToggle?: ReactNode;
 };
 
 function useIsMobile() {
@@ -83,7 +85,7 @@ function useIsMobile() {
   return m;
 }
 
-export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect }: Props) {
+export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect, lensToggle }: Props) {
   const isMobile = useIsMobile();
   // Dots pop in on mount / route navigation; closes before filter/scope edits.
   const revealing = useReveal(1400);
@@ -242,18 +244,21 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
       }}
     >
       <header className="mb-8 flex flex-col gap-10 md:mb-10 md:gap-12">
-        <div>
-          <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
-            <span className="text-core-bright">02</span> /{" "}
-            <span className="text-ink-1">The Scatter</span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+              <span className="text-core-bright">02</span> /{" "}
+              <span className="text-ink-1">The Scatter</span>
+            </div>
+            <h2
+              className="m-0 max-w-[820px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
+              style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
+            >
+              Draw your own <span className="text-core-bright">bet</span>. Distance
+              from your line is the <span className="text-core-bright">miss</span>.
+            </h2>
           </div>
-          <h2
-            className="m-0 max-w-[820px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
-            style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
-          >
-            Draw your own <span className="text-core-bright">bet</span>. Distance
-            from your line is the <span className="text-core-bright">miss</span>.
-          </h2>
+          {lensToggle}
         </div>
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline gap-2.5">
