@@ -2,21 +2,83 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { Braces, Copy, Download, ExternalLink, Search, X } from "lucide-react";
 
 import { Icon } from "@/components/icon";
 import { Team, dataset } from "@/lib/data";
 
 const MAX_RESULTS = 8;
 
+// "Fork the data" — the open single JSON is the product, so make grabbing it a
+// first-class action in the palette rather than something you read about.
+type ForkCommand = {
+  id: string;
+  label: string;
+  hint: string;
+  keywords: string;
+  icon: ReactNode;
+  /** Copy actions keep the palette open and flash "Copied"; others close it. */
+  copy?: boolean;
+};
+
+const FORK_COMMANDS: ForkCommand[] = [
+  { id: "download", label: "Download the dataset", hint: "json", keywords: "fork download save export file", icon: <Download aria-hidden className="size-4" /> },
+  { id: "open", label: "Open the raw JSON", hint: "new tab", keywords: "open raw view api endpoint", icon: <ExternalLink aria-hidden className="size-4" /> },
+  { id: "copy-url", label: "Copy the data URL", hint: "clipboard", keywords: "copy url link address", icon: <Copy aria-hidden className="size-4" />, copy: true },
+  { id: "copy-fetch", label: "Copy a fetch() snippet", hint: "clipboard", keywords: "copy fetch snippet code javascript", icon: <Braces aria-hidden className="size-4" />, copy: true },
+];
+
 export function FloatingSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const [copied, setCopied] = useState<string | null>(null);
 
   const teams: Team[] = dataset.teams;
+  const year = dataset.metadata.tournament_year;
+
+  const commands = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return FORK_COMMANDS;
+    return FORK_COMMANDS.filter((c) =>
+      `${c.label} ${c.keywords}`.toLowerCase().includes(q),
+    );
+  }, [query]);
+
+  const close = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
+  const runCommand = (cmd: ForkCommand) => {
+    const path = `/data/${year}.json`;
+    const url = `${window.location.origin}${path}`;
+    if (cmd.id === "download") {
+      const a = document.createElement("a");
+      a.href = path;
+      a.download = `hyp3-${year}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      close();
+    } else if (cmd.id === "open") {
+      window.open(path, "_blank", "noopener,noreferrer");
+      close();
+    } else if (cmd.id === "copy-url") {
+      navigator.clipboard?.writeText(url);
+      flashCopied(cmd.id);
+    } else if (cmd.id === "copy-fetch") {
+      navigator.clipboard?.writeText(`fetch(${JSON.stringify(url)}).then((r) => r.json())`);
+      flashCopied(cmd.id);
+    }
+  };
+
+  const flashCopied = (id: string) => {
+    setCopied(id);
+    window.setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500);
+  };
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -130,10 +192,11 @@ export function FloatingSearch() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && matches.length > 0)
-                    select(matches[0]);
+                  if (e.key !== "Enter") return;
+                  if (matches.length > 0) select(matches[0]);
+                  else if (commands.length > 0) runCommand(commands[0]);
                 }}
-                placeholder="Search teams…"
+                placeholder="Search teams or fork the data…"
                 aria-label="Search teams"
                 className="w-full bg-transparent font-sans text-base text-ink placeholder:text-ink-3 focus:outline-none"
               />
@@ -154,11 +217,41 @@ export function FloatingSearch() {
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto p-1.5">
-              {matches.length === 0 ? (
+              {commands.length === 0 && matches.length === 0 ? (
                 <div className="px-3 py-6 text-center font-mono text-[12px] uppercase tracking-[0.1em] text-ink-2">
-                  No teams match &ldquo;{query}&rdquo;
+                  No matches for &ldquo;{query}&rdquo;
                 </div>
               ) : (
+                <>
+                {commands.length > 0 && (
+                  <ul className="mb-1">
+                    <li className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
+                      Fork the data
+                    </li>
+                    {commands.map((cmd) => (
+                      <li key={cmd.id}>
+                        <button
+                          type="button"
+                          onClick={() => runCommand(cmd)}
+                          className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[rgba(255,255,255,0.04)] focus-visible:bg-[rgba(255,255,255,0.04)] focus-visible:outline-none"
+                        >
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="shrink-0 text-core-bright">{cmd.icon}</span>
+                            <span className="truncate font-sans text-[15px] text-ink">
+                              {cmd.label}
+                            </span>
+                          </span>
+                          <span
+                            className={`shrink-0 font-mono text-[11px] uppercase tracking-[0.12em] ${copied === cmd.id ? "text-underhyped" : "text-ink-2"}`}
+                          >
+                            {copied === cmd.id ? "Copied" : cmd.hint}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {matches.length > 0 && (
                 <ul>
                   {!query && (
                     <li className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
@@ -202,6 +295,8 @@ export function FloatingSearch() {
                     </li>
                   ))}
                 </ul>
+                )}
+                </>
               )}
             </div>
 
