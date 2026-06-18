@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { GapPredict } from "@/components/gap-predict";
 import { Icon } from "@/components/icon";
+import { SpectrumCurrent } from "@/components/spectrum-current";
 import { AnimatedListReorder, AnimatedRow } from "@/components/motion";
 import { useReveal } from "@/components/motion/use-reveal";
 import { StoryTag, Team } from "@/lib/data";
@@ -159,6 +160,9 @@ export function GapChart({
       {/* Chart frame — flat dark surface, no radial aurora glows. */}
       {!predicting && (
       <div className="relative overflow-hidden rounded-[14px] border border-border bg-bg-1">
+
+        {/* Electric current running the spectrum (additive 2D overlay). */}
+        <SpectrumCurrent />
 
         {/* Axis label row.
             Mobile (<480px): compact 3-col with abbreviated arrow labels.
