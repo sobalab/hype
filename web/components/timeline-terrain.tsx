@@ -10,6 +10,7 @@ import { LineGeometry } from "three/addons/lines/LineGeometry.js";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 
 import { GapMode, StoryTag, TAG_LABEL, Team } from "@/lib/data";
+import { useOnScreen } from "@/lib/use-on-screen";
 
 const COL: Record<StoryTag, number> = {
   overhyped: 0xf995b6,
@@ -342,15 +343,18 @@ export function TimelineTerrain({ teams, mode }: { teams: Team[]; mode: GapMode 
   const [activeTag, setActiveTag] = useState<StoryTag | null>(null);
   const activeTagRef = useRef<StoryTag | null>(null);
   activeTagRef.current = activeTag;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const onScreen = useOnScreen(wrapRef);
 
   return (
     <div
+      ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
       style={{ height: "min(72vh, 640px)" }}
     >
       <Canvas
         dpr={[1, 2]}
-        frameloop={reduce ? "demand" : "always"}
+        frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
         camera={{ position: [2, 18, 52], fov: 40, near: 0.1, far: 300 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}

@@ -6,10 +6,15 @@ import { FluidBackground } from "@/components/fluid-background";
 import { IntroLoader } from "@/components/intro-loader";
 import { TweaksPanel } from "@/components/tweaks-panel";
 
+// Host Grotesk is only a fallback now (Alpha Lyrae is the primary UI face and
+// is self-hosted). Don't preload it on the critical path — it loads lazily only
+// if the fallback actually renders during Alpha Lyrae's brief swap window.
 const hostGrotesk = Host_Grotesk({
   variable: "--font-host",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
+  preload: false,
+  display: "swap",
 });
 
 export const metadata: Metadata = {

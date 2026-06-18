@@ -12,6 +12,7 @@ import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 
 import { buildRegionTree } from "@/components/bracket-tree";
 import { Region, REGIONS, StoryTag, TAG_LABEL, Team } from "@/lib/data";
+import { useOnScreen } from "@/lib/use-on-screen";
 
 const COL: Record<StoryTag, number> = {
   overhyped: 0xf995b6,
@@ -455,9 +456,12 @@ export function Bracket3D({
   activeTagRef.current = activeTag;
   const hoverRef = useRef<Team | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const onScreen = useOnScreen(wrapRef);
 
   return (
     <div
+      ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
       style={{ height: "min(74vh, 680px)" }}
       onClick={() => {
@@ -466,7 +470,7 @@ export function Bracket3D({
     >
       <Canvas
         dpr={[1, 2]}
-        frameloop={reduce ? "demand" : "always"}
+        frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
         camera={{ position: [0, 33, 46], fov: 42, near: 0.1, far: 400 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}

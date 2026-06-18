@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { GapMode, StoryTag, TAG_LABEL, Team } from "@/lib/data";
+import { useOnScreen } from "@/lib/use-on-screen";
 
 const COL: Record<StoryTag, [number, number, number]> = {
   overhyped: [0.976, 0.584, 0.714],
@@ -421,9 +422,12 @@ export function Scatter3D({
   activeTagRef.current = activeTag;
   const hoverRef = useRef<number>(-1);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const onScreen = useOnScreen(wrapRef);
 
   return (
     <div
+      ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
       style={{ height: "min(72vh, 640px)" }}
       onClick={() => {
@@ -433,7 +437,7 @@ export function Scatter3D({
     >
       <Canvas
         dpr={[1, 2]}
-        frameloop={reduce ? "demand" : "always"}
+        frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
         camera={{ position: [12, 8.5, 16], fov: 46, near: 0.1, far: 200 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}

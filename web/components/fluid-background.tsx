@@ -114,8 +114,15 @@ export function FluidBackground() {
     };
     document.addEventListener("visibilitychange", onVisibility);
 
+    // Cap to ~30fps: this is heavily-blurred ambient motion, so halving the
+    // blurred-layer recompositing is invisible but meaningfully cheaper.
+    const MIN_DT = 1000 / 30;
+    let lastFrame = 0;
     const loop = (nowMs: number) => {
       if (!running) return;
+      raf = requestAnimationFrame(loop);
+      if (nowMs - lastFrame < MIN_DT) return;
+      lastFrame = nowMs;
       const t = nowMs / 1000;
       const W = window.innerWidth;
       const H = window.innerHeight;
@@ -140,7 +147,6 @@ export function FluidBackground() {
         }
         el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
       }
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
 

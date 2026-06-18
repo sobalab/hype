@@ -98,8 +98,13 @@ export function SpectrumCurrent() {
     };
     document.addEventListener("visibilitychange", onVis);
 
+    // ~30fps cap: ambient current, and each frame fully redraws the canvas
+    // with shadowBlur, so halving the rate roughly halves the paint cost.
+    const MIN_DT = 1000 / 30;
     const loop = (now: number) => {
       if (!running) return;
+      raf = requestAnimationFrame(loop);
+      if (now - last < MIN_DT) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const cx = w / 2;
@@ -158,7 +163,6 @@ export function SpectrumCurrent() {
       }
 
       ctx.globalCompositeOperation = "source-over";
-      raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
 
