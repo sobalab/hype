@@ -8,7 +8,9 @@ A single-page editorial visualization of the gap between internet hype and tourn
 |---|---|
 | Hype data | Python + pytrends + pandas (offline, run once per refresh) |
 | Frontend | Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui |
-| Charts | Recharts (via shadcn chart wrapper) for the team detail area chart; CSS for the diverging bar chart |
+| Charts | Recharts for the team area chart; CSS for the diverging bars; SVG for the scatter; canvas for the spectrum current |
+| 3D | three.js + react-three-fiber + drei — electric scenes behind a 2D/3D lens toggle (scatter / timeline / bracket), lazy-loaded |
+| Motion | framer-motion — editorial easing + an additive spring track (see CLAUDE.md "Two motion registers") |
 | Hosting | Vercel |
 | Data flow | Python script → `data/data.json` (committed) → Next.js imports at build time. No backend, no runtime API. |
 
@@ -89,6 +91,8 @@ npm run build    # production build
 ```
 
 `predev` and `prebuild` scripts copy `data/2026.json` → `web/data.json` so it bundles into the Next.js build. The web app's import target stays at `web/data.json` regardless of which year is bundled — only the source path in [web/package.json](web/package.json) changes if the bundled year ever switches.
+
+`npm run dev` sets `HYP3_DEV=1`, which points the dev build dir to `.next.nosync`. This repo lives under iCloud-synced `~/Documents`, and iCloud corrupts Turbopack's churning dev artifacts; the `.nosync` suffix keeps them unsynced (and stops local `next build` from clobbering a running dev server). Build/Vercel keep the standard `.next`. See CLAUDE.md → "Dev server dist dir lives outside iCloud".
 
 ## Editorial system
 

@@ -215,16 +215,21 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 |---|---|
 | [web/app/page.tsx](web/app/page.tsx) | `/` — server, mounts `<AppShell view="gap">` |
 | [web/app/bracket/page.tsx](web/app/bracket/page.tsx) | `/bracket` — server, mounts `<AppShell view="bracket">` |
-| [web/app/layout.tsx](web/app/layout.tsx) | Loads Host Grotesk + sets metadata |
-| [web/app/globals.css](web/app/globals.css) | Tailwind theme + `@font-face` for Neue Black + FA-1 + light-mode color tokens |
-| [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag` + `TAG_STYLE` color tokens |
-| [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client wrapper holding filter + selection state, `view` prop switches between gap/bracket sections |
-| [web/components/hero.tsx](web/components/hero.tsx) | Top meta strip + "[finding TBD]" headline |
-| [web/components/section-nav.tsx](web/components/section-nav.tsx) | Bloomberg-style sub-nav between routes |
-| [web/components/filters.tsx](web/components/filters.tsx) | story_tag + region pills |
-| [web/components/gap-chart.tsx](web/components/gap-chart.tsx) | Diverging horizontal bar chart (CSS, not Recharts) |
-| [web/components/bracket-grid.tsx](web/components/bracket-grid.tsx) | 4-region grid of teams sorted by seed |
-| [web/components/team-sheet.tsx](web/components/team-sheet.tsx) | shadcn Sheet with full-season area chart (tournament window highlighted via ReferenceArea) + 4-stat KPI block |
+| [web/app/layout.tsx](web/app/layout.tsx) | Loads fonts + metadata; mounts `FluidBackground`, `IntroLoader`, `FloatingSearch`, dev-only `TweaksPanel` |
+| [web/app/globals.css](web/app/globals.css) | Tailwind theme + dark tokens + `@font-face` (Alpha Lyrae / Neue / FA-1) + the fluid-field, console-nav (`.cn-*`), grid/aurora, and viz-entrance CSS |
+| [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag`, `projectTeamForMode`, `TAG_STYLE` tokens |
+| [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client shell holding filter/selection/`gapMode`/`scope`/`betLine`/year state + `UrlSync`; `view` prop renders gap/scatter/timeline/bracket |
+| [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav (channel tabs + scope toggle + year + signal); optional interactive props (landing mounts navigation-only) |
+| [web/components/filters.tsx](web/components/filters.tsx) | story_tag + region + round pills (scope toggle removed; nav owns it) |
+| [web/components/gap-chart.tsx](web/components/gap-chart.tsx) | Diverging bars (CSS) + continuous scope-slider morph + `Predict the order`; mounts `SpectrumCurrent` |
+| [web/components/{scatter,timeline,bracket}-view.tsx] | 2D/3D lens wrappers: own the toggle, lazy-load the r3f scene |
+| [web/components/{scatter-3d,timeline-terrain,bracket-3d}.tsx] | react-three-fiber electric scenes (cloud / terrain / tree) |
+| [web/components/spectrum-current.tsx](web/components/spectrum-current.tsx) | 2D canvas electric current on the divergent bars |
+| [web/components/gap-predict.tsx](web/components/gap-predict.tsx) | Divergent drag-to-predict mode (framer `Reorder`) → reveal + score |
+| [web/components/provenance.tsx](web/components/provenance.tsx) | Hover/tap source-trace popover (used by team-sheet KPIs) |
+| [web/components/floating-search.tsx](web/components/floating-search.tsx) | cmd+K palette: team search + "fork the data" commands |
+| [web/components/team-sheet.tsx](web/components/team-sheet.tsx) | shadcn Sheet: season curve + KPI block, each KPI source-traced via `Provenance` |
+| [web/lib/use-is-mobile.ts] / [web/lib/use-on-screen.ts] | shared hooks: flash-free media query, IntersectionObserver visibility |
 
 ### Filter state is page-local
 
@@ -236,15 +241,19 @@ When filters narrow the visible teams, bars/meters still scale to `maxAbsGap(all
 
 ### Brand & typography conventions
 
+The app is **dark** (charcoal surface ramp `--bg #16161a` → `--bg-3`, white-ish ink). The earlier "light mode" is gone.
+
 | Token | Value | Where |
 |---|---|---|
-| Brand color | `#44D1D1` | `--brand` CSS var → `bg-brand`/`text-brand` Tailwind utility |
-| Body font | Host Grotesk weight 500 | Google Fonts via `next/font/google`, default body class is `font-medium` |
-| Display font | Neue Black | `@font-face` from `web/public/fonts/TheNeue-Black.woff2`. Auto-applies to `h1`–`h6` and `.font-display` via `globals.css` `@layer base` |
-| Mono / labels | FA-1 Regular | `@font-face` from `web/public/fonts/FA-1-Regular.otf`. Used wherever `font-mono` is applied. `tracking-normal` (not letter-spaced) |
-| Story tag colors | rose/sky/amber/zinc | Centralized in `TAG_STYLE` in [lib/data.ts](web/lib/data.ts) |
+| Accent | blue core ramp `--core #1277de` → `--core-bright #72b8ff` | `text-core`/`text-core-bright`. `--brand` aliases `--core-bright` |
+| Primary UI font | **Alpha Lyrae Medium (500)** | `@font-face` in `globals.css` from `web/public/fonts/AlphaLyrae-Medium.woff2`; drives `--font-sans`. Used across the whole interface |
+| Logo font | Neue Black | `@font-face` from `TheNeue-Black.woff2`; `--font-display`, auto-applies to `h1`–`h6` and `.font-display`. **Logo / HYP3 wordmark only** — do not use Neue elsewhere |
+| Fallback font | Host Grotesk | `next/font/google`, `--font-host`, `preload: false` (Alpha Lyrae is primary, so it's a non-preloaded swap fallback only) |
+| Mono / labels | FA-1 Regular | `@font-face` from `FA-1-Regular.otf`; `font-mono`, `tracking-normal` |
+| Story tag colors | neon-pastel `#f995b6` / `#66e7d8` / `#efecaf` / `#b4b4ef` | `--overhyped/underhyped/as-expected/noise`; per-component `TAG_RGB`/`TAG_COLOR` maps mirror these |
+| Live indicator | `--live #ff7a3d` | console-nav "live channel" LEDs |
 
-The app forces light mode (white bg, `#3A3B3B` text). The `dark` class is removed from `<html>` and the `.dark` block in `globals.css` is unused.
+Charcoal/grid/aurora defaults (`--bg` charcoal, `--grid-opacity 0.8`, `--aurora-intensity 0.15`) live in BOTH `:root` (globals.css) and `DEFAULTS` in [tweaks-panel.tsx](web/components/tweaks-panel.tsx) — keep them in sync.
 
 ### Brand caps
 
@@ -253,6 +262,42 @@ The brand is **HYP3**, always all-caps. Never "Hyp3", "hyp3", "Hype3". Search/re
 ### TAG_STYLE is the single retheming surface
 
 To retheme story_tag colors (or invert which tag is "danger" coded), edit `TAG_STYLE` in [lib/data.ts](web/lib/data.ts). All components consume from there. Three inline color refs that bypass it (rose/sky used as semantic +/− indicators in gap-chart and bracket-grid) are intentional — they encode direction independent of the tag color.
+
+### Two motion registers — do not collapse them
+
+[components/motion/easing.ts](web/components/motion/easing.ts) exports both. `EASING` (cubic `[0.25,0.1,0.25,1]`) is the **editorial** track: body copy, section reveals, anything that must read as credible. `SPRING` (stiffness 120 / damping 18 / mass 1.1) and `SPRING_SNAPPY` are the **playful** track, applied only to: background, chart state transitions, list reorder, the bet interactions. The spring is **additive — never swap `EASING` globally.** Every motion surface has a `prefers-reduced-motion` settled fallback (no pulses/springs/autoplay).
+
+### Fluid background + dev TweaksPanel
+
+[components/fluid-background.tsx](web/components/fluid-background.tsx) is an app-wide z-0 layer (blurred drifting blobs that ease toward the cursor) mounted in the root layout. It reads `--aurora-intensity` / `--grid-opacity` and blooms in on the `hyp3:intro-dismissed` event from the loader. `TweaksPanel` is **dev-only** (`process.env.NODE_ENV === "development"` gate in layout) and writes those CSS vars + the `[data-bg-grid]` class live. Ambient rAF loops (fluid bg, `spectrum-current`) are **capped to ~30fps** and pause on `visibilitychange` — keep that cap (halves blurred-layer recompositing).
+
+### Four views, one 2D/3D lens convention
+
+The four routes (`/divergent /scatter /timeline /bracket`) each render `<AppShell view=...>`. Scatter/Timeline/Bracket expose a **2D/3D lens toggle** via a `lensToggle` header slot: the wrapper (`*-view.tsx`) owns the toggle and `dynamic(() => …, { ssr: false })`-imports the r3f scene so **three.js never SSRs and is a separate lazy chunk** (loaded only when 3D opens). The electric/3D scenes use raw three via `three/addons` inside r3f. **Divergent has no 3D model on purpose** — it's a 2D editorial chart, so it gets the `SpectrumCurrent` 2D canvas overlay instead.
+
+3D-scene rules (all three): build objects imperatively in a `useMemo` and add/dispose on the scene; clamp `dpr={[1,2]}`; pause render via `frameloop="never"` when `useOnScreen` reports offscreen; reduced motion = static (no autorotate/pulses/reveal). `three`/`@react-three/fiber@9`/`@react-three/drei@10` are locked to React 19.
+
+### Scope is a continuous slider synced to the discrete `gapMode`
+
+Divergent replaces the tournament/season toggle with a 0→1 `scope` slider (`gap-chart.tsx`); app-shell keeps it in lockstep with the global `gapMode` (crossing 0.5 flips the mode, so filters/counts/URL/other views stay coherent). Bars interpolate gap/width/side/color between the two ends via `projectTeamForMode`; the axis scale spans BOTH modes so bars don't rescale mid-scrub. The binary scope toggle now lives **only in the console nav** (removed from filters).
+
+### The bet spine + URL portability
+
+Scatter (2D) = **draw your expectation line** (`BetLine {y0,y1}`); it's lifted to app-shell and synced through `UrlSync` as `?line=y0,y1` (a portable, account-free artifact; "Copy bet link" in the bet card). Divergent = **drag-to-predict** (`gap-predict.tsx`, framer `Reorder`) → lock → spring-resort to truth + accuracy score; this is **session-local, not URL-encoded** (the 68-team permutation is too long/filter-dependent). `UrlSync` is the single place that reads/writes search params (`tags/region/round/team/mode/line/year`) — keep all URL state there (it's under a `<Suspense>` for `useSearchParams`).
+
+### Provenance + fork-the-data
+
+Every team-sheet KPI traces to its source/window/transform + `data_pulled_at` via the `Provenance` popover (sourced from `metadata` + documented methodology, mode-aware). The cmd+K palette (`floating-search.tsx`) carries a "Fork the data" command group (download / open raw / copy URL / copy `fetch()`), pointing at `/data/<year>.json`.
+
+### Year stepper is 2026-only for now
+
+The nav year control offers only `YEARS = [2026]` in app-shell (renders as a static readout with one year). 2025 exists on disk but is **tournament-only** (no `season_*` fields, finding "[finding TBD]"), so it's excluded until backfilled — selecting it would empty season mode and `NaN` the season UI. The `?year=` swap mechanism (`YearSwapper`) still works for complete years.
+
+### Responsive + perf conventions
+
+- **No JS breakpoint flash:** use `useIsMobile`/`useMediaQuery` from [lib/use-is-mobile.ts](web/lib/use-is-mobile.ts) (isomorphic layout-effect corrects before paint; initial state `false` matches SSR — do not lazy-init from `window` or it mismatches).
+- **Root clips horizontal overflow:** `overflow-x: clip` is on **both** `html` and `body` (clip, not hidden, to preserve sticky nav). Section headers stack the lens toggle below the headline on mobile (`flex-col sm:flex-row`). The nav channel group is full-width-own-line below `lg` so its scroller is container-bounded.
+- **Deferred load lever:** `web/data.json` is ~861KB bundled (≈311KB is `season_hype_daily`, used by the team sheet AND the season-mode heatmap). Splitting it out is a wider refactor — left bundled for now.
 
 ## Common workflows
 
