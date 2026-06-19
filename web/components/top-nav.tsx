@@ -171,8 +171,8 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
         <span aria-hidden className="cn-screw" style={{ bottom: 9, left: 9 }} />
         <span aria-hidden className="cn-screw" style={{ bottom: 9, right: 9 }} />
 
-        {/* Unit */}
-        <Group label="Unit">
+        {/* Unit — logo + year, nudged right (no power LED) */}
+        <Group label="Unit" className="pl-2 sm:pl-3">
           <Link
             href="/"
             aria-label="HYP3 home"
@@ -189,11 +189,68 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
             <span className="font-display text-[22px] font-black uppercase leading-none tracking-[0.03em] text-ink">
               HYP<span className="text-core-bright">3</span>
             </span>
-            <span aria-hidden className="cn-pwr ml-0.5 size-2 rounded-full" />
           </Link>
+          {/* Year, formatted under the logo */}
+          <div className="cn-track inline-flex w-fit items-center gap-2 rounded-[10px] px-2.5 py-1">
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-3">
+              Year
+            </span>
+            {effYears.length > 1 ? (
+              <>
+                <Step label="Previous year" disabled={yearIdx <= 0} onClick={() => onYear?.(effYears[yearIdx - 1])}>
+                  −
+                </Step>
+                <span className="min-w-[42px] text-center font-mono text-[14px] tabular-nums text-ink">
+                  {effYear}
+                </span>
+                <Step label="Next year" disabled={yearIdx >= effYears.length - 1} onClick={() => onYear?.(effYears[yearIdx + 1])}>
+                  +
+                </Step>
+              </>
+            ) : (
+              <span className="font-mono text-[14px] tabular-nums text-ink">{effYear}</span>
+            )}
+          </div>
         </Group>
 
         <span aria-hidden className="cn-divider hidden lg:block" />
+
+        {setMode && (
+          <>
+            {/* Scope */}
+            <Group label="Scope">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isSeason}
+                aria-label="Scope: tournament or season"
+                onClick={() => setMode(isSeason ? "tournament" : "season")}
+                className="cn-track relative grid grid-cols-2 items-stretch rounded-[12px] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
+              >
+                <span
+                  aria-hidden
+                  className="cn-knob absolute left-1 top-1 rounded-[8px]"
+                  style={{
+                    height: "calc(100% - 8px)",
+                    width: "calc(50% - 4px)",
+                    transform: isSeason ? "translateX(100%)" : "none",
+                  }}
+                />
+                <span
+                  className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink-2" : "text-ink"}`}
+                >
+                  Tourn
+                </span>
+                <span
+                  className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink" : "text-ink-2"}`}
+                >
+                  Season
+                </span>
+              </button>
+            </Group>
+            <span aria-hidden className="cn-divider hidden lg:block" />
+          </>
+        )}
 
         {/* Channel — full-width own line below lg so the horizontal scroller is
             bounded by the container (no clipping); inline on desktop. */}
@@ -246,79 +303,6 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
                 );
               })}
             </div>
-          </div>
-        </Group>
-
-        {setMode && (
-        <>
-        <span aria-hidden className="cn-divider hidden lg:block" />
-
-        {/* Scope */}
-        <Group label="Scope">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isSeason}
-            aria-label="Scope: tournament or season"
-            onClick={() => setMode(isSeason ? "tournament" : "season")}
-            className="cn-track relative grid grid-cols-2 items-stretch rounded-[12px] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
-          >
-            <span
-              aria-hidden
-              className="cn-knob absolute left-1 top-1 rounded-[8px]"
-              style={{
-                height: "calc(100% - 8px)",
-                width: "calc(50% - 4px)",
-                transform: isSeason ? "translateX(100%)" : "none",
-              }}
-            />
-            <span
-              className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink-2" : "text-ink"}`}
-            >
-              Tourn
-            </span>
-            <span
-              className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink" : "text-ink-2"}`}
-            >
-              Season
-            </span>
-          </button>
-        </Group>
-        </>
-        )}
-
-        <span aria-hidden className="cn-divider hidden lg:block" />
-
-        {/* Year — a stepper when multiple complete years exist, else a static
-            readout (only 2026 is complete today). */}
-        <Group label="Year" className="hidden md:flex">
-          <div className="cn-track flex items-center gap-2 rounded-[12px] px-2.5 py-1.5">
-            {effYears.length > 1 && (
-              <Step
-                label="Previous year"
-                disabled={yearIdx <= 0}
-                onClick={() => onYear?.(effYears[yearIdx - 1])}
-              >
-                −
-              </Step>
-            )}
-            <div className="relative h-[22px] w-[58px] overflow-y-hidden text-center">
-              <span
-                key={effYear}
-                className="cn-year-roll absolute inset-0 flex items-center justify-center font-mono text-[16px] tabular-nums tracking-normal text-ink"
-              >
-                {effYear}
-              </span>
-            </div>
-            {effYears.length > 1 && (
-              <Step
-                label="Next year"
-                disabled={yearIdx >= effYears.length - 1}
-                onClick={() => onYear?.(effYears[yearIdx + 1])}
-              >
-                +
-              </Step>
-            )}
           </div>
         </Group>
 
