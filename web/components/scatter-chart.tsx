@@ -264,7 +264,7 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
               Teams
             </span>
           </div>
-          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
+          <p className="m-0 max-w-md text-left text-[17px] leading-[1.6] text-[#D7EBFF]">
             Drag the line, or either end, to set how much hype should buy. Every
             dot recolors by its distance from your line.
           </p>

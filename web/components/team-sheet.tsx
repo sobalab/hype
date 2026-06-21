@@ -294,7 +294,7 @@ function TeamModalBody({
         >
           {gap > 0 ? `+${gap}` : gap}
         </div>
-        <p className="mx-auto mt-3 max-w-[460px] text-left font-sans text-[15px] leading-[1.5] text-ink-1">
+        <p className="mx-auto mt-3 max-w-[460px] text-left font-sans text-base leading-[1.55] text-ink-1">
           {gapStoryCopy(mode, team, active, gap)}
         </p>
       </div>

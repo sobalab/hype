@@ -120,7 +120,7 @@ export function BracketTree({
               Teams
             </span>
           </div>
-          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
+          <p className="m-0 max-w-md text-left text-[17px] leading-[1.6] text-[#D7EBFF]">
             The bracket as it played out, recolored by who was oversold.
           </p>
         </div>

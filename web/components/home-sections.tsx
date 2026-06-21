@@ -55,13 +55,13 @@ export function AboutSection() {
           <span className="text-core-bright">subtract</span>.
         </h2>
         <div className="mt-10 flex flex-col gap-6">
-          <p className="m-0 text-base font-medium leading-relaxed text-white lg:text-[17px]">
+          <p className="m-0 text-[17px] font-medium leading-relaxed text-white lg:text-[19px]">
             Twitter, ESPN, and Google all settle on a handful of favorites weeks
             before tipoff. The teams that actually win the bracket are usually a
             partial overlap. HYP3 plots both lists for the same 68 teams and
             shows where they don&apos;t match.
           </p>
-          <p className="m-0 text-base font-medium leading-relaxed text-white lg:text-[17px]">
+          <p className="m-0 text-[17px] font-medium leading-relaxed text-white lg:text-[19px]">
             For each team, we pull daily Google Trends search interest two ways:
             across the 15-day window around Selection Sunday (tournament mode),
             and across the full season from Nov 1 onward (season mode). Rank the
@@ -145,7 +145,7 @@ function FAQItem({
       </button>
       {open && (
         <div className="px-5 pb-6 sm:px-7">
-          <p className="m-0 max-w-[820px] text-base font-medium leading-[1.65] text-[#D7EBFF]">
+          <p className="m-0 max-w-[820px] text-[17px] font-medium leading-[1.65] text-[#D7EBFF]">
             {a}
           </p>
         </div>
@@ -175,7 +175,7 @@ export function ApiSection() {
           >
             The whole dataset is one JSON file.
           </h2>
-          <p className="m-0 mt-6 max-w-[640px] font-sans text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
+          <p className="m-0 mt-6 max-w-[640px] font-sans text-[17px] font-medium leading-relaxed text-[#D7EBFF] lg:text-[19px]">
             No backend, no auth, no rate limits. The site bundles the year&apos;s
             file at build time. Fetch it yourself and do whatever you want with
             it, notebook, sketch, dashboard.
@@ -255,7 +255,7 @@ function ApiRow({
         {method}
       </span>
       <code className="font-mono text-sm text-ink">{path}</code>
-      <span className="font-sans text-[15px] font-medium italic leading-[1.5] text-[#D7EBFF]">
+      <span className="font-sans text-base font-medium italic leading-[1.5] text-[#D7EBFF]">
         {note}
       </span>
     </div>
@@ -309,7 +309,7 @@ export function SourcesSection() {
           >
             Where the data comes from.
           </h2>
-          <p className="m-0 mt-6 max-w-[640px] text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
+          <p className="m-0 mt-6 max-w-[640px] text-[17px] font-medium leading-relaxed text-[#D7EBFF] lg:text-[19px]">
             Three upstream sources, all cached locally. The live site
             doesn&apos;t hit any of them at request time.
           </p>
@@ -366,7 +366,7 @@ function SourceCard({
           <Icon name="upright-arrow" size={10} />
         </a>
       </div>
-      <span className="mt-4 font-sans text-[15px] font-medium leading-[1.5] text-[#D7EBFF]">
+      <span className="mt-4 font-sans text-base font-medium leading-[1.5] text-[#D7EBFF]">
         {note}
       </span>
     </div>

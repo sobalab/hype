@@ -214,9 +214,9 @@
     background-color: var(--bg);
     letter-spacing: 0.02em;
     font-feature-settings: "ss01", "cv11", "tnum";
-    /* Floor body text at 16px to dodge iOS auto-zoom on inputs and meet
-       the readable-on-mobile minimum. */
-    font-size: 16px;
+    /* Base body (Rubik) text size. Floored ≥16px to dodge iOS auto-zoom on
+       inputs and meet the readable-on-mobile minimum. */
+    font-size: 17px;
     line-height: 1.5;
   }
   html {

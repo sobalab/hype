@@ -119,7 +119,7 @@ export function GapChart({
               Teams
             </span>
           </div>
-          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
+          <p className="m-0 max-w-md text-left text-[17px] leading-[1.6] text-[#D7EBFF]">
             Left = overhyped. Right = underhyped. Tap any row to expand team
             details.
           </p>
