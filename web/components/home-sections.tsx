@@ -189,7 +189,9 @@ function PreviewRow({ team, maxAbs }: { team: Team; maxAbs: number }) {
   );
 }
 
-export function AboutSection() {
+export function AboutSection({ data }: { data: Dataset }) {
+  // A real, punchy example for the formula visual: the most overhyped team.
+  const ex = [...data.teams].sort((a, b) => a.gap - b.gap)[0];
   return (
     <section
       id="about"
@@ -226,8 +228,60 @@ export function AboutSection() {
             internet got it right.
           </p>
         </div>
+
+        {/* The formula, visualized with a real team. */}
+        {ex && (
+          <div className="mt-14 w-full">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+              <EqTile label="Hype rank" value={`#${ex.hype_rank}`} />
+              <EqOp>−</EqOp>
+              <EqTile label="Performance rank" value={`#${ex.performance_rank}`} />
+              <EqOp>=</EqOp>
+              <EqTile
+                label="The gap"
+                value={ex.gap > 0 ? `+${ex.gap}` : `${ex.gap}`}
+                accent="var(--overhyped)"
+              />
+            </div>
+            <div className="mt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
+              e.g. {ex.team} <span className="text-ink-2">·</span> {data.metadata.tournament_year}
+            </div>
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function EqTile({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+}) {
+  return (
+    <div className="cn-track flex min-w-[118px] flex-col items-center gap-2 rounded-[12px] px-5 py-4">
+      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+        {label}
+      </span>
+      <span
+        className="font-display text-[30px] font-bold leading-none tabular-nums"
+        style={{ color: accent ?? "var(--ink)", textShadow: accent ? "0 0 20px currentColor" : undefined }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function EqOp({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="font-display text-2xl font-bold leading-none text-ink-2">
+      {children}
+    </span>
   );
 }
 
@@ -338,7 +392,7 @@ export function ApiSection() {
           </p>
         </div>
 
-        <div className="mb-8 mt-12 grid grid-cols-1 gap-4">
+        <div className="mb-6 mt-12 grid grid-cols-1 gap-4">
           <ApiRow
             method="GET"
             path="/data/2026.json"
@@ -349,6 +403,35 @@ export function ApiSection() {
             path="/data/2025.json"
             note="Florida championship year."
           />
+        </div>
+
+        {/* Terminal snippet — concrete usage, console-styled. */}
+        <div className="mb-12 overflow-hidden rounded-xl border border-border bg-black/50">
+          <div className="flex items-center gap-1.5 border-b border-border bg-black/40 px-4 py-2.5">
+            <span aria-hidden className="size-2.5 rounded-full" style={{ background: "var(--overhyped)" }} />
+            <span aria-hidden className="size-2.5 rounded-full" style={{ background: "var(--as-expected)" }} />
+            <span aria-hidden className="size-2.5 rounded-full" style={{ background: "var(--underhyped)" }} />
+            <span className="ml-2 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
+              fetch the data
+            </span>
+          </div>
+          <pre className="overflow-x-auto px-5 py-4 font-mono text-[13px] leading-[1.7] sm:text-sm">
+            <code>
+              <span className="text-ink-3">const</span>{" "}
+              <span className="text-ink">teams</span> ={" "}
+              <span className="text-ink-3">await</span>{" "}
+              <span className="text-core-bright">fetch</span>(
+              <span className="text-as-expected">{"'/data/2026.json'"}</span>)
+              {"\n  "}.<span className="text-core-bright">then</span>(
+              <span className="text-ink">r</span> {"=>"} <span className="text-ink">r</span>.
+              <span className="text-core-bright">json</span>())
+              {"\n  "}.<span className="text-core-bright">then</span>(
+              <span className="text-ink">d</span> {"=>"} <span className="text-ink">d</span>.
+              <span className="text-ink">teams</span>);
+              {"\n\n"}
+              <span className="text-ink-3">{"// 68 teams — hype, wins, gap, story_tag"}</span>
+            </code>
+          </pre>
         </div>
 
         <div className="mb-3 text-center font-mono text-sm uppercase tracking-[0.14em] text-ink-1">
@@ -470,7 +553,21 @@ export function SourcesSection() {
             doesn&apos;t hit any of them at request time.
           </p>
         </div>
-        <div className="mt-12 grid grid-cols-1 gap-4">
+
+        {/* Pipeline flow — two inputs converge through the cached pipeline into
+            the single bundled JSON. */}
+        <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <div className="flex flex-col gap-2.5">
+            <FlowNode>Google Trends</FlowNode>
+            <FlowNode>NCAA API</FlowNode>
+          </div>
+          <FlowArrow />
+          <FlowNode>Cached pipeline</FlowNode>
+          <FlowArrow />
+          <FlowNode accent>data.json</FlowNode>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-4">
           <SourceCard
             label="Google Trends"
             href="https://trends.google.com/trends/"
@@ -492,6 +589,37 @@ export function SourcesSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+function FlowNode({
+  children,
+  accent,
+}: {
+  children: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-[10px] border px-4 py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] ${
+        accent
+          ? "border-core-bright/50 bg-[rgba(18,119,222,0.12)] text-core-bright shadow-[0_0_20px_rgba(18,119,222,0.25)]"
+          : "border-border bg-bg-3 text-ink-1"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function FlowArrow() {
+  return (
+    <span
+      aria-hidden
+      className="rotate-90 font-mono text-base text-ink-3 sm:rotate-0"
+    >
+      →
+    </span>
   );
 }
 
