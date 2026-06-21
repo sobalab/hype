@@ -4,6 +4,7 @@ import {
   AboutSection,
   ApiSection,
   FAQSection,
+  GapPreviewSection,
   SourcesSection,
 } from "@/components/home-sections";
 import { TopNav } from "@/components/top-nav";
@@ -14,6 +15,7 @@ export default function Home() {
     <>
       <TopNav dataset={dataset} />
       <Hero data={dataset} />
+      <GapPreviewSection data={dataset} />
       <AboutSection />
       <ApiSection />
       <SourcesSection />

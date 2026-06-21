@@ -3,8 +3,10 @@
 import type React from "react";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import Link from "next/link";
 
 import { Icon } from "@/components/icon";
+import { Dataset, Team } from "@/lib/data";
 
 const FAQS: { q: string; a: string }[] = [
   {
@@ -32,6 +34,160 @@ const FAQS: { q: string; a: string }[] = [
     a: "2026 ships bundled with the site. 2025 (Florida's championship year) is also served and loadable via the year query parameter on the data pages. Each year has its own reference team and methodology notes in the repo.",
   },
 ];
+
+// Pink (overhyped) / teal (underhyped) as RGB so bars can build rgba() ramps.
+const PREVIEW_RGB = {
+  overhyped: [0xf9, 0x95, 0xb6] as const,
+  underhyped: [0x66, 0xe7, 0xd8] as const,
+};
+
+// A compact, on-brand preview of the dataset's headline finding: the most
+// overhyped and most underhyped teams as a mini diverging chart (same visual
+// language as the /divergent view). Rows deep-link into the full chart.
+export function GapPreviewSection({ data }: { data: Dataset }) {
+  const teams = data.teams;
+  const maxAbs = Math.max(1, ...teams.map((t) => Math.abs(t.gap)));
+  const over = [...teams]
+    .filter((t) => t.gap < 0)
+    .sort((a, b) => a.gap - b.gap)
+    .slice(0, 6);
+  const under = [...teams]
+    .filter((t) => t.gap > 0)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 6);
+  // Single center-axis list, most-overhyped at the top down to most-underhyped.
+  const rows = [...over, ...under].sort((a, b) => a.gap - b.gap);
+
+  return (
+    <section
+      id="preview"
+      className="relative border-b border-border bg-bg-1"
+      style={{ padding: "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)" }}
+    >
+      <div className="mx-auto max-w-[1000px]">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 font-mono text-sm uppercase tracking-[0.18em] text-core-bright">
+            The 2026 field
+          </div>
+          <h2
+            className="m-0 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+            style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
+          >
+            Where hype met <span className="text-core-bright">reality</span>.
+          </h2>
+          <p className="m-0 mt-6 max-w-[620px] text-[17px] font-medium leading-relaxed text-[#D7EBFF] lg:text-[19px]">
+            The biggest misses in both directions — teams the internet oversold,
+            and the ones it slept on.
+          </p>
+        </div>
+
+        <div className="mt-12 overflow-hidden rounded-[14px] border border-border bg-bg">
+          <div className="grid grid-cols-2 border-b border-border bg-black/30 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] sm:px-6 sm:text-xs">
+            <span className="text-overhyped">← Overhyped</span>
+            <span className="text-right text-underhyped">Underhyped →</span>
+          </div>
+          <div className="relative flex flex-col gap-px px-3 py-3 sm:px-5">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-3 left-1/2 w-px"
+              style={{
+                background:
+                  "linear-gradient(180deg, transparent, var(--border-hi) 12%, var(--border-hi) 88%, transparent)",
+              }}
+            />
+            {rows.map((t) => (
+              <PreviewRow key={t.team} team={t} maxAbs={maxAbs} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-9 flex justify-center">
+          <Link
+            href="/divergent"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.12em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
+          >
+            See all {teams.length} teams
+            <span aria-hidden>→</span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PreviewRow({ team, maxAbs }: { team: Team; maxAbs: number }) {
+  const isOver = team.gap < 0;
+  const [r, g, b] = isOver ? PREVIEW_RGB.overhyped : PREVIEW_RGB.underhyped;
+  const rgba = (a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
+  const solid = `rgb(${r}, ${g}, ${b})`;
+  const pct = (Math.abs(team.gap) / maxAbs) * 100;
+  const seed = String(team.seed).padStart(2, "0");
+  const pill = (
+    <span
+      className="inline-flex min-w-[34px] shrink-0 items-center justify-center rounded-full border bg-[rgba(10,10,12,0.85)] px-1.5 py-px font-mono text-xs font-bold tabular-nums"
+      style={{ borderColor: rgba(0.4), color: solid, textShadow: "0 0 10px currentColor" }}
+    >
+      {team.gap > 0 ? `+${team.gap}` : team.gap}
+    </span>
+  );
+
+  return (
+    <Link
+      href={`/divergent?team=${encodeURIComponent(team.team)}`}
+      className="group grid min-h-[34px] grid-cols-2 items-stretch rounded-[3px] transition-colors hover:bg-[rgba(255,255,255,0.025)]"
+    >
+      {/* LEFT half — overhyped */}
+      <div className="relative h-full">
+        {isOver && (
+          <>
+            <div
+              className="absolute right-0 top-px bottom-px rounded-l-sm"
+              style={{
+                width: `${pct}%`,
+                background: `linear-gradient(90deg, ${rgba(0.08)}, ${rgba(0.33)} 70%, ${solid})`,
+                boxShadow: `inset 0 0 0 1px ${rgba(0.4)}`,
+              }}
+            />
+            <div className="absolute inset-y-0 left-2 right-1.5 z-[2] flex items-center gap-2 md:left-3 md:right-2">
+              <span className="hidden shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
+                {seed}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-left font-sans text-[13px] font-medium text-ink md:text-sm">
+                {team.team}
+              </span>
+              {pill}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* RIGHT half — underhyped (mirrored) */}
+      <div className="relative h-full">
+        {!isOver && (
+          <>
+            <div
+              className="absolute left-0 top-px bottom-px rounded-r-sm"
+              style={{
+                width: `${pct}%`,
+                background: `linear-gradient(270deg, ${rgba(0.08)}, ${rgba(0.33)} 70%, ${solid})`,
+                boxShadow: `inset 0 0 0 1px ${rgba(0.4)}`,
+              }}
+            />
+            <div className="absolute inset-y-0 left-1.5 right-2 z-[2] flex items-center gap-2 md:left-2 md:right-3">
+              {pill}
+              <span className="min-w-0 flex-1 truncate text-right font-sans text-[13px] font-medium text-ink md:text-sm">
+                {team.team}
+              </span>
+              <span className="hidden shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
+                {seed}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </Link>
+  );
+}
 
 export function AboutSection() {
   return (
@@ -131,7 +287,7 @@ function FAQItem({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left transition-colors hover:bg-[rgba(255,255,255,0.02)] sm:px-7"
+        className="flex w-full items-center justify-between gap-4 px-6 py-6 text-left transition-colors hover:bg-[rgba(255,255,255,0.02)] sm:px-8"
       >
         <span className="font-display text-[16px] font-bold leading-[1.3] tracking-[-0.005em] text-ink sm:text-[18px]">
           {q}
@@ -144,7 +300,7 @@ function FAQItem({
         />
       </button>
       {open && (
-        <div className="px-5 pb-6 sm:px-7">
+        <div className="px-6 pb-7 sm:px-8">
           <p className="m-0 max-w-[820px] text-[17px] font-medium leading-[1.65] text-[#D7EBFF]">
             {a}
           </p>
@@ -182,7 +338,7 @@ export function ApiSection() {
           </p>
         </div>
 
-        <div className="mb-8 mt-12 grid grid-cols-1 gap-3">
+        <div className="mb-8 mt-12 grid grid-cols-1 gap-4">
           <ApiRow
             method="GET"
             path="/data/2026.json"
@@ -250,7 +406,7 @@ function ApiRow({
   note: string;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-black/30 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-black/30 px-6 py-4">
       <span className="rounded-md border border-core-bright/40 bg-[rgba(18,119,222,0.16)] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-core-bright">
         {method}
       </span>
@@ -314,7 +470,7 @@ export function SourcesSection() {
             doesn&apos;t hit any of them at request time.
           </p>
         </div>
-        <div className="mt-12 grid grid-cols-1 gap-3">
+        <div className="mt-12 grid grid-cols-1 gap-4">
           <SourceCard
             label="Google Trends"
             href="https://trends.google.com/trends/"
@@ -351,7 +507,7 @@ function SourceCard({
   note: string;
 }) {
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-black/30 px-4 py-3">
+    <div className="flex flex-col rounded-xl border border-border bg-black/30 px-6 py-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className="shrink-0 self-start rounded-md border border-core-bright/40 bg-[rgba(18,119,222,0.16)] px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-core-bright sm:self-auto">
           {label}
