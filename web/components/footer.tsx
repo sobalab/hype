@@ -6,7 +6,7 @@ type Props = { data: Dataset };
 export function Footer({ data }: Props) {
   return (
     <footer
-      className="relative z-[1] mt-10 border-t border-border"
+      className="relative z-[1] bg-bg-1"
       style={{
         padding:
           "clamp(3.5rem, 8vw, 6rem) clamp(1.5rem, 4vw, 3rem) clamp(2rem, 4vw, 2.5rem)",

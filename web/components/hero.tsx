@@ -34,7 +34,7 @@ export function Hero({ data }: Props) {
             "clamp(3.5rem, 9vw, 7rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
         }}
       >
-        <span className="logo-pulse inline-flex max-w-full items-center gap-2 truncate whitespace-nowrap rounded-full border border-brand bg-black/40 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-brand shadow-[0_0_24px_rgba(114,184,255,0.3)] backdrop-blur sm:text-sm sm:tracking-[0.14em]">
+        <span className="logo-pulse inline-flex max-w-full items-center gap-2 truncate whitespace-nowrap rounded-[10px] border border-brand bg-black/40 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-brand shadow-[0_0_24px_rgba(114,184,255,0.3)] backdrop-blur sm:text-sm sm:tracking-[0.14em]">
           March Madness{" "}
           <span aria-hidden className="size-1.5 rounded-full bg-brand align-middle" />{" "}
           {year} Tournament
@@ -74,10 +74,10 @@ export function Hero({ data }: Props) {
               <Link
                 href="/divergent"
                 aria-label="Explore the data"
-                className="cn-sel relative z-[1] inline-flex min-h-11 items-center gap-2.5 rounded-[9px] px-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink transition-transform duration-200 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:px-5"
+                className="relative z-[1] inline-flex min-h-11 items-center gap-2.5 rounded-[9px] border border-core-bright/50 bg-core px-4 font-mono text-[12px] uppercase tracking-[0.14em] text-white transition-transform duration-200 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:px-5"
               >
                 Explore the data
-                <span aria-hidden className="text-core-bright">→</span>
+                <span aria-hidden className="text-white">→</span>
               </Link>
               <a
                 href="#about"

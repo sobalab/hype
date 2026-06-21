@@ -61,7 +61,7 @@ export function GapPreviewSection({ data }: { data: Dataset }) {
   return (
     <section
       id="preview"
-      className="relative border-b border-border bg-bg-1"
+      className="relative border-b border-border bg-bg"
       style={{ padding: "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)" }}
     >
       <div className="mx-auto max-w-[1000px]">
@@ -81,8 +81,8 @@ export function GapPreviewSection({ data }: { data: Dataset }) {
           </p>
         </div>
 
-        <div className="mt-12 overflow-hidden rounded-[14px] border border-border bg-bg">
-          <div className="grid grid-cols-2 border-b border-border bg-black/30 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] sm:px-6 sm:text-xs">
+        <div className="mt-12 overflow-hidden rounded-[14px] border border-border bg-bg-1">
+          <div className="grid grid-cols-2 border-b border-border bg-black/20 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] sm:px-6 sm:text-xs">
             <span className="text-overhyped">← Overhyped</span>
             <span className="text-right text-underhyped">Underhyped →</span>
           </div>
@@ -104,7 +104,7 @@ export function GapPreviewSection({ data }: { data: Dataset }) {
         <div className="mt-9 flex justify-center">
           <Link
             href="/divergent"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.12em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
+            className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-5 py-2.5 font-mono text-[12px] uppercase tracking-[0.12em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
           >
             See all {teams.length} teams
             <span aria-hidden>→</span>
@@ -289,7 +289,7 @@ export function FAQSection() {
   return (
     <section
       id="faqs"
-      className="relative border-b border-border bg-bg-1"
+      className="relative border-b border-border bg-bg"
       style={{
         padding:
           "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
@@ -531,7 +531,7 @@ export function SourcesSection() {
   return (
     <section
       id="sources"
-      className="relative border-b border-border bg-bg-1"
+      className="relative border-b border-border bg-bg"
       style={{
         padding:
           "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
