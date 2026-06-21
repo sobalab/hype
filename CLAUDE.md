@@ -220,7 +220,7 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 | [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag`, `projectTeamForMode`, `TAG_STYLE` tokens |
 | [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client shell holding filter/selection/`gapMode`/`scope`/`betLine`/year state + `UrlSync`; `view` prop renders gap/scatter/timeline/bracket |
 | [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav: bordered logo cell + wordmark, YEAR pill, horizontal channel tabs (roman · dot · name), and SYSTEM STATUS / LATENCY readouts. No scope toggle (filter bar owns it) and no "Channel" label. Landing ("/") = no active channel; optional year-stepper props only |
-| [web/components/filters.tsx](web/components/filters.tsx) | story_tag + region + round pills + the tournament/season SCOPE toggle (`ModeToggle`, group "A"). `showScope` is on for scatter/timeline/bracket, off for divergent (which has its own in-chart slider) |
+| [web/components/filters.tsx](web/components/filters.tsx) | `FilterBar` — an **inline** filter strip (story_tag pills + region segmented + round dropdown + tournament/season SCOPE `ModeToggle` + reset). Rendered **inside each chart view, under its header** (not a floating/sticky bar); built once in app-shell and threaded down via a `filterBar` slot (mirrors `lensToggle`). Always-visible from `sm` up; collapses behind a "Filters" toggle below `sm`. `showScope` on for scatter/timeline/bracket, off for divergent (its own in-chart slider); `showRoundFilter` off for timeline/bracket |
 | [web/components/gap-chart.tsx](web/components/gap-chart.tsx) | Diverging bars (CSS) + continuous scope-slider morph + `Predict the order`; mounts `SpectrumCurrent` |
 | [web/components/{scatter,timeline,bracket}-view.tsx] | 2D/3D lens wrappers: own the toggle, lazy-load the r3f scene |
 | [web/components/{scatter-3d,timeline-terrain,bracket-3d}.tsx] | react-three-fiber electric scenes (cloud / terrain / tree) |
@@ -279,7 +279,7 @@ The four routes (`/divergent /scatter /timeline /bracket`) each render `<AppShel
 
 ### Scope is a continuous slider synced to the discrete `gapMode`
 
-Divergent replaces the tournament/season toggle with a 0→1 `scope` slider (`gap-chart.tsx`); app-shell keeps it in lockstep with the global `gapMode` (crossing 0.5 flips the mode, so filters/counts/URL/other views stay coherent). Bars interpolate gap/width/side/color between the two ends via `projectTeamForMode`; the axis scale spans BOTH modes so bars don't rescale mid-scrub. The binary scope toggle lives in the **filter bar** (`filters.tsx`, `showScope`) for scatter/timeline/bracket; it's hidden on divergent (the slider replaces it) and absent from the nav entirely.
+Divergent replaces the tournament/season toggle with a 0→1 `scope` slider (`gap-chart.tsx`); app-shell keeps it in lockstep with the global `gapMode` (crossing 0.5 flips the mode, so filters/counts/URL/other views stay coherent). Bars interpolate gap/width/side/color between the two ends via `projectTeamForMode`; the axis scale spans BOTH modes so bars don't rescale mid-scrub. The binary scope toggle lives in the inline **`FilterBar`** (`filters.tsx`, `showScope`), rendered under each chart's header, for scatter/timeline/bracket; it's hidden on divergent (the slider replaces it) and absent from the nav entirely.
 
 ### The bet spine + URL portability
 

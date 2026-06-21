@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { BracketTree } from "@/components/bracket-tree";
 import { Region, Team } from "@/lib/data";
@@ -27,6 +27,7 @@ type Props = {
   teams: Team[];
   filteredTeams: Team[];
   selectedRegion: Region | "all";
+  filterBar?: ReactNode;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
@@ -86,6 +87,7 @@ export function BracketView(props: Props) {
           </div>
           {toggle}
         </header>
+        {props.filterBar}
         <Bracket3D teams={props.teams} onSelect={props.onSelect} />
       </section>
     );

@@ -72,9 +72,11 @@ type Props = {
   onSelect: (team: Team) => void;
   /** Optional control (the 2D/3D lens toggle) rendered in the header. */
   lensToggle?: ReactNode;
+  /** Inline filter strip, rendered under the header (above the chart). */
+  filterBar?: ReactNode;
 };
 
-export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect, lensToggle }: Props) {
+export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelect, lensToggle, filterBar }: Props) {
   const isMobile = useIsMobile();
   // Dots pop in on mount / route navigation; closes before filter/scope edits.
   const revealing = useReveal(1400);
@@ -267,6 +269,8 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
           </p>
         </div>
       </header>
+
+      {filterBar}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
         <div

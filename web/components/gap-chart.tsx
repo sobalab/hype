@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { GapPredict } from "@/components/gap-predict";
 import { Icon } from "@/components/icon";
@@ -38,6 +38,8 @@ type Props = {
   /** 0 = tournament, 1 = season. Each bar interpolates between its two ends. */
   scope: number;
   onScopeChange: (v: number) => void;
+  /** Inline filter strip, rendered under the header (above the chart). */
+  filterBar?: ReactNode;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
@@ -47,6 +49,7 @@ export function GapChart({
   maxAbsGap,
   scope,
   onScopeChange,
+  filterBar,
   selectedTeam,
   onSelect,
 }: Props) {
@@ -148,6 +151,8 @@ export function GapChart({
           </>
         )}
       </header>
+
+      {!predicting && filterBar}
 
       {predicting && (
         <GapPredict

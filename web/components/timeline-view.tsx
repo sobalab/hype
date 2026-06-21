@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { TimelineHeatmap } from "@/components/timeline-heatmap";
 import { GapMode, Team } from "@/lib/data";
@@ -32,6 +32,7 @@ type Props = {
   windowDates: string[];
   maxDailyHype: number;
   selectionSundayDate?: string;
+  filterBar?: ReactNode;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
@@ -91,6 +92,7 @@ export function TimelineView(props: Props) {
           </div>
           {toggle}
         </header>
+        {props.filterBar}
         <TimelineTerrain teams={props.teams} mode={props.mode} />
       </section>
     );

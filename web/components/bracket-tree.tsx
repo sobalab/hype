@@ -59,6 +59,8 @@ type Props = {
   onSelect: (team: Team) => void;
   /** Optional control (the 2D/3D lens toggle) rendered in the header. */
   lensToggle?: ReactNode;
+  /** Inline filter strip, rendered under the header (above the chart). */
+  filterBar?: ReactNode;
 };
 
 export function BracketTree({
@@ -68,6 +70,7 @@ export function BracketTree({
   selectedTeam,
   onSelect,
   lensToggle,
+  filterBar,
 }: Props) {
   const visibleTagSet = new Set<StoryTag>(filteredTeams.map((t) => t.story_tag));
   const regionsToShow: Region[] =
@@ -127,6 +130,8 @@ export function BracketTree({
 
         <Legend />
       </header>
+
+      {filterBar}
 
       {/* Champion banner — always visible up top so the final result is
           legible without horizontal scrolling through the tree. */}

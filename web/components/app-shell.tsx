@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { BracketView } from "@/components/bracket-view";
-import { Filters } from "@/components/filters";
+import { FilterBar } from "@/components/filters";
 import { Footer } from "@/components/footer";
 import { GapChart } from "@/components/gap-chart";
 import { BetLine, DEFAULT_LINE } from "@/components/scatter-chart";
@@ -398,22 +398,25 @@ export function AppShell({ data, view }: Props) {
     setSelectedTeam(original);
   };
 
-  // Hide the sticky Filters bar once the footer scrolls into view so the
-  // footer reads as the end of the page (no chrome floating over it).
-  const footerRef = useRef<HTMLDivElement>(null);
-  const [footerInView, setFooterInView] = useState(false);
-  useEffect(() => {
-    const node = footerRef.current;
-    if (!node) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) setFooterInView(entry.isIntersecting);
-      },
-      { threshold: 0 },
-    );
-    obs.observe(node);
-    return () => obs.disconnect();
-  }, []);
+  // Inline filter strip — rendered inside each chart view (under its header),
+  // not as a floating bar. State + URL sync still live here; only one view is
+  // mounted per route, so this single node is consumed once.
+  const filterBar = (
+    <FilterBar
+      mode={gapMode}
+      setMode={setGapMode}
+      selectedTags={selectedTags}
+      selectedRegion={selectedRegion}
+      selectedRound={selectedRound}
+      tagCounts={counts}
+      showRoundFilter={view !== "bracket" && view !== "timeline"}
+      showScope={view !== "gap"}
+      onToggleTag={onToggleTag}
+      onSetRegion={setSelectedRegion}
+      onSetRound={setSelectedRound}
+      onReset={onReset}
+    />
+  );
 
   return (
     <>
@@ -447,28 +450,13 @@ export function AppShell({ data, view }: Props) {
       />
 
       <div id="hyp3-content" className="scroll-mt-[var(--hyp3-nav-h,0px)]">
-        <Filters
-          mode={gapMode}
-          setMode={setGapMode}
-          selectedTags={selectedTags}
-          selectedRegion={selectedRegion}
-          selectedRound={selectedRound}
-          tagCounts={counts}
-          showRoundFilter={view !== "bracket" && view !== "timeline"}
-          showScope={view !== "gap"}
-          onToggleTag={onToggleTag}
-          onSetRegion={setSelectedRegion}
-          onSetRound={setSelectedRound}
-          onReset={onReset}
-          hidden={footerInView}
-        />
-
         {view === "gap" && (
           <GapChart
             teams={filteredOriginalTeams}
             maxAbsGap={gapScale}
             scope={scope}
             onScopeChange={onScope}
+            filterBar={filterBar}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
@@ -480,6 +468,7 @@ export function AppShell({ data, view }: Props) {
             mode={gapMode}
             value={betLine ?? DEFAULT_LINE}
             onCommit={setBetLine}
+            filterBar={filterBar}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
@@ -491,6 +480,7 @@ export function AppShell({ data, view }: Props) {
             mode={gapMode}
             windowDates={windowDates}
             maxDailyHype={maxDailyHype}
+            filterBar={filterBar}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
@@ -501,15 +491,14 @@ export function AppShell({ data, view }: Props) {
             teams={projectedTeams}
             filteredTeams={filteredTeams}
             selectedRegion={selectedRegion}
+            filterBar={filterBar}
             selectedTeam={selectedTeam?.team ?? null}
             onSelect={(t) => selectTeamByOriginal(t)}
           />
         )}
       </div>
 
-      <div ref={footerRef}>
-        <Footer data={dataset} />
-      </div>
+      <Footer data={dataset} />
 
       <TeamSheet
         team={selectedTeam}

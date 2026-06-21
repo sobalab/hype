@@ -35,16 +35,13 @@ type Props = {
   /** Divergent replaces the binary scope toggle with its own slider, so the
       toggle is hidden there. Defaults to shown for the other views. */
   showScope?: boolean;
-  /** When true, the sticky bar fades + lifts off-screen (used when the
-      footer enters viewport so chrome doesn't float over it). */
-  hidden?: boolean;
   onToggleTag: (tag: StoryTag) => void;
   onSetRegion: (r: Region | "all") => void;
   onSetRound: (r: Round) => void;
   onReset: () => void;
 };
 
-export function Filters({
+export function FilterBar({
   mode,
   setMode,
   selectedTags,
@@ -53,232 +50,147 @@ export function Filters({
   tagCounts,
   showRoundFilter = true,
   showScope = true,
-  hidden = false,
   onToggleTag,
   onSetRegion,
   onSetRound,
   onReset,
 }: Props) {
-  // Collapsible at every breakpoint. Always starts closed so route navigation
-  // doesn't reopen the panel — a pulsing dot on the toggle button signals it's
-  // interactive instead.
+  // Always-visible inline strip from sm up; below sm it collapses behind this
+  // toggle to preserve scroll space. The CSS `sm:!` overrides force it open and
+  // hide the toggle on larger screens regardless of `open`.
   const [open, setOpen] = useState(false);
-  // The grid-rows expand/collapse trick needs overflow-hidden on the immediate
-  // grid child during animation, but that also clips the absolutely-positioned
-  // Round dropdown menu (which extends past the filter panel's bottom border).
-  // Switch the wrapper to overflow-visible only after the open transition ends.
-  const [expanded, setExpanded] = useState(false);
-  useEffect(() => {
-    if (!open) setExpanded(false);
-  }, [open]);
 
   return (
-    <div
-      className={`sticky top-[var(--hyp3-nav-h,0px)] z-30 border-y-[1.5px] bg-bg shadow-[0_10px_28px_-16px_rgba(0,0,0,0.7)] transition-[transform,border-color] duration-300 ease-in-out ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
-      style={{
-        // Borderless when collapsed so the toggle reads as part of the console
-        // region above it (the drop shadow still separates it when stuck on
-        // scroll); the full-width frame only appears once the drawer opens.
-        borderTopColor: "transparent",
-        borderBottomColor: open ? "var(--border-hi)" : "transparent",
-      }}
-    >
-      <div
-        // Match the nav console's width + inline padding so the toggle lines up
-        // under the console's left edge instead of floating indented.
-        className="mx-auto flex max-w-[1440px] flex-col"
-        style={{
-          paddingTop: "0.55rem",
-          paddingBottom: open ? "1.5rem" : "0.55rem",
-          paddingInline: "clamp(0.75rem, 3vw, 1.5rem)",
-        }}
+    <div className="mb-6 md:mb-8">
+      {/* Mobile-only toggle */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="hyp3-inline-filters"
+        className="mb-2 inline-flex min-h-10 w-full items-center justify-between gap-3 rounded-[10px] border border-border-hi bg-[var(--surface)] px-3.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:hidden"
       >
-        {/* Master toggle — visible at every breakpoint. Stretches full-width
-            on mobile (tap target) and shrinks to natural width on md+. */}
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-controls="hyp3-filter-panel"
-          className="cn-track group inline-flex h-11 w-full items-center justify-between gap-3 rounded-[10px] px-3.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 md:h-10 md:w-auto md:min-w-[150px] md:self-start md:px-3.5 lg:ml-1"
-        >
-          <span className="inline-flex items-center gap-2">
-            {!open && (
-              <span
-                aria-hidden
-                className="relative inline-flex size-2 shrink-0"
-              >
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-core-bright opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-core-bright shadow-[0_0_8px_var(--core-bright)]" />
-              </span>
-            )}
-            Filters
-          </span>
-          {open ? (
-            <ChevronUp aria-hidden className="size-4 text-ink-2" />
-          ) : (
-            <ChevronDown aria-hidden className="size-4 text-ink-2" />
+        <span className="inline-flex items-center gap-2">
+          {!open && (
+            <span aria-hidden className="relative inline-flex size-2 shrink-0">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-core-bright opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-core-bright shadow-[0_0_8px_var(--core-bright)]" />
+            </span>
           )}
-        </button>
+          Filters
+        </span>
+        {open ? (
+          <ChevronUp aria-hidden className="size-4 text-ink-2" />
+        ) : (
+          <ChevronDown aria-hidden className="size-4 text-ink-2" />
+        )}
+      </button>
 
-        <div
-          id="hyp3-filter-panel"
-          aria-hidden={!open}
-          onTransitionEnd={(e) => {
-            if (e.propertyName === "grid-template-rows" && open) setExpanded(true);
-          }}
-          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
-            open ? "grid-rows-[1fr] opacity-100" : "pointer-events-none grid-rows-[0fr] opacity-0"
-          }`}
-        >
-          <div className={`min-h-0 overflow-hidden ${expanded ? "md:overflow-visible" : ""}`}>
-        <div className="mt-4 flex max-h-[calc(100dvh-var(--hyp3-nav-h,64px)-120px)] flex-col gap-10 overflow-y-auto overscroll-contain rounded-xl border border-border bg-[rgba(0,0,0,0.22)] p-5 shadow-[inset_0_10px_22px_-14px_rgba(0,0,0,0.8)] md:max-h-none md:overflow-visible md:p-6">
-        {/* PRIMARY ROW — Scope + Story.
-            Mobile: stack vertically. md+: lay out inline with generous gap. */}
-        <div className="flex flex-col gap-10 md:flex-row md:flex-wrap md:items-start md:gap-10">
-          {showScope && (
-            <>
-              <PrimaryGroup marker="A" label="SCOPE">
+      {/* Controls — collapsible on mobile, always shown from sm up. */}
+      <div
+        id="hyp3-inline-filters"
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out sm:!grid-rows-[1fr] sm:!opacity-100 ${
+          open
+            ? "grid-rows-[1fr] opacity-100"
+            : "pointer-events-none grid-rows-[0fr] opacity-0 sm:pointer-events-auto"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden sm:overflow-visible">
+          <div className="flex flex-col gap-6 rounded-[12px] border border-border bg-[rgba(255,255,255,0.025)] p-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-7 sm:gap-y-5">
+            {showScope && (
+              <FieldGroup label="Scope">
                 <ModeToggle mode={mode} setMode={setMode} />
-              </PrimaryGroup>
+              </FieldGroup>
+            )}
 
-              <div className="hidden self-stretch border-r border-border md:block" />
-            </>
-          )}
-
-          <PrimaryGroup
-            marker="B"
-            label="STORY"
-            sublabel={
-              selectedTags.size === TAG_ORDER.length
-                ? "All"
-                : `${selectedTags.size} of ${TAG_ORDER.length}`
-            }
-          >
-            <div className="flex flex-wrap gap-2.5 md:pt-[5px]">
-              {TAG_ORDER.map((tag) => {
-                const active = selectedTags.has(tag);
-                const color = TAG_COLOR[tag];
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => onToggleTag(tag)}
-                    aria-pressed={active}
-                    // 44px tap target on mobile (a11y); compact on md+.
-                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.08em] transition-all md:min-h-9 md:px-3 md:py-1"
-                    style={{
-                      borderColor: active ? color : "var(--border)",
-                      background: active ? `${color}22` : "transparent",
-                      color: active ? color : "var(--ink-1)",
-                      opacity: active ? 1 : 0.55,
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      className="size-1.5 rounded-full"
-                      style={{ background: color }}
-                    />
-                    {TAG_LABEL[tag]}
-                    <span
-                      className="ml-0.5 rounded-full border bg-black/30 px-1.5 py-px font-mono text-[12px] tabular-nums"
-                      style={{ borderColor: "currentColor" }}
+            <FieldGroup
+              label="Story"
+              sublabel={
+                selectedTags.size === TAG_ORDER.length
+                  ? "All"
+                  : `${selectedTags.size}/${TAG_ORDER.length}`
+              }
+            >
+              <div className="flex flex-wrap gap-2.5">
+                {TAG_ORDER.map((tag) => {
+                  const active = selectedTags.has(tag);
+                  const color = TAG_COLOR[tag];
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => onToggleTag(tag)}
+                      aria-pressed={active}
+                      // 44px tap target on mobile (a11y); compact on md+.
+                      className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.08em] transition-all md:min-h-9 md:px-3 md:py-1"
+                      style={{
+                        borderColor: active ? color : "var(--border)",
+                        background: active ? `${color}22` : "transparent",
+                        color: active ? color : "var(--ink-1)",
+                        opacity: active ? 1 : 0.55,
+                      }}
                     >
-                      {tagCounts[tag] ?? 0}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </PrimaryGroup>
-        </div>
+                      <span
+                        aria-hidden
+                        className="size-1.5 rounded-full"
+                        style={{ background: color }}
+                      />
+                      {TAG_LABEL[tag]}
+                      <span
+                        className="ml-0.5 rounded-full border bg-black/30 px-1.5 py-px font-mono text-[12px] tabular-nums"
+                        style={{ borderColor: "currentColor" }}
+                      >
+                        {tagCounts[tag] ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </FieldGroup>
 
-        {/* SECONDARY ROW — refinements.
-            Mobile: stack. md+: inline with generous gap, Reset pushed right. */}
-        <div className="flex flex-col gap-8 md:flex-row md:flex-wrap md:items-center md:gap-8 md:border-t md:border-border md:pt-5">
-          <SecondaryGroup marker="C" label="Region">
-            <Segmented
-              options={[{ id: "all", label: "All" }, ...REGIONS.map((r) => ({ id: r, label: r }))]}
-              value={selectedRegion}
-              onChange={(v) => onSetRegion(v as Region | "all")}
-            />
-          </SecondaryGroup>
+            <FieldGroup label="Region">
+              <Segmented
+                options={[{ id: "all", label: "All" }, ...REGIONS.map((r) => ({ id: r, label: r }))]}
+                value={selectedRegion}
+                onChange={(v) => onSetRegion(v as Region | "all")}
+              />
+            </FieldGroup>
 
-          {showRoundFilter && (
-            <>
-              <div className="hidden h-4 w-px self-center bg-border md:block" />
-              <SecondaryGroup marker="D" label="Round">
+            {showRoundFilter && (
+              <FieldGroup label="Round">
                 <RoundDropdown value={selectedRound} setValue={onSetRound} />
-              </SecondaryGroup>
-            </>
-          )}
+              </FieldGroup>
+            )}
 
-          <div className="hidden md:block md:ml-auto" />
-
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg border border-border bg-transparent px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:border-border-hi hover:text-ink md:min-h-9 md:self-auto md:px-3 md:py-1"
-          >
-            <Icon name="reset" size={12} />
-            Reset filters
-          </button>
-        </div>
-        </div>
-        </div>
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg border border-border bg-transparent px-2.5 py-1.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:border-border-hi hover:text-ink sm:ml-auto sm:mt-[22px] sm:min-h-9 sm:px-3 sm:py-1"
+            >
+              <Icon name="reset" size={12} />
+              Reset
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function PrimaryGroup({
-  marker,
+function FieldGroup({
   label,
   sublabel,
   children,
 }: {
-  marker: string;
   label: string;
   sublabel?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
-        <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[var(--surface)] text-xs text-ink-1">
-          {marker}
-        </span>
-        <span>{label}</span>
-        {sublabel && (
-          <span className="ml-1 font-mono text-xs tracking-[0.1em] text-ink-3 sm:text-sm">
-            {sublabel}
-          </span>
-        )}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function SecondaryGroup({
-  marker,
-  label,
-  children,
-}: {
-  marker?: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2.5">
-      <span className="inline-flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
-        {marker && (
-          <span className="inline-flex size-5 items-center justify-center rounded border border-border-hi bg-[var(--surface)] text-xs text-ink-1">
-            {marker}
-          </span>
-        )}
-        <span>{label}</span>
+      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-2">
+        {label}
+        {sublabel && <span className="ml-1.5 text-ink-3">{sublabel}</span>}
       </span>
       {children}
     </div>

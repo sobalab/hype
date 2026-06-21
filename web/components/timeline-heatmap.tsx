@@ -49,6 +49,8 @@ type Props = {
   onSelect: (team: Team) => void;
   /** Optional control (the 2D/3D lens toggle) rendered in the header. */
   lensToggle?: ReactNode;
+  /** Inline filter strip, rendered under the header (above the chart). */
+  filterBar?: ReactNode;
 };
 
 type Bucket = {
@@ -109,6 +111,7 @@ export function TimelineHeatmap({
   selectedTeam,
   onSelect,
   lensToggle,
+  filterBar,
 }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("gap");
   const isMobile = useIsMobile(767);
@@ -273,6 +276,8 @@ export function TimelineHeatmap({
           </div>
         </div>
       </header>
+
+      {filterBar}
 
       {scrubberActive && (
         <div className="mb-3 flex items-center gap-3 sm:hidden">

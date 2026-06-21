@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { BetLine, ScatterChartView } from "@/components/scatter-chart";
 import { GapMode, Team } from "@/lib/data";
@@ -28,11 +28,12 @@ type Props = {
   mode: GapMode;
   value: BetLine;
   onCommit: (line: BetLine | null) => void;
+  filterBar?: ReactNode;
   selectedTeam: string | null;
   onSelect: (team: Team) => void;
 };
 
-export function ScatterView({ teams, mode, value, onCommit, selectedTeam, onSelect }: Props) {
+export function ScatterView({ teams, mode, value, onCommit, filterBar, selectedTeam, onSelect }: Props) {
   const [lens, setLens] = useState<Lens>("2d");
 
   const toggle = (
@@ -87,6 +88,7 @@ export function ScatterView({ teams, mode, value, onCommit, selectedTeam, onSele
           </div>
           {toggle}
         </header>
+        {filterBar}
         <Scatter3D teams={teams} mode={mode} onSelect={onSelect} />
       </section>
     );
@@ -100,6 +102,7 @@ export function ScatterView({ teams, mode, value, onCommit, selectedTeam, onSele
       selectedTeam={selectedTeam}
       onSelect={onSelect}
       lensToggle={toggle}
+      filterBar={filterBar}
     />
   );
 }
