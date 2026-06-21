@@ -13,7 +13,7 @@ const Scatter3D = dynamic(
     loading: () => (
       <div
         className="flex w-full items-center justify-center rounded-[14px] border border-border bg-[#06070a] font-mono text-xs uppercase tracking-[0.14em] text-ink-3"
-        style={{ height: "min(72vh, 640px)" }}
+        style={{ height: "min(80vh, 800px)" }}
       >
         Loading cloud…
       </div>

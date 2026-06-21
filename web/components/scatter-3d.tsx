@@ -76,8 +76,39 @@ type Built = {
   spark: Float32Array;
   adj: number[][];
   bolts: Bolt[];
+  labels: THREE.Sprite[];
   N: number;
 };
+
+// Per-point team name. Auto-shrinks the font so long names fit the texture, and
+// carries a soft shadow so the text reads against the dark field.
+function nameSprite(text: string): THREE.Sprite {
+  const cv = document.createElement("canvas");
+  cv.width = 256;
+  cv.height = 64;
+  const ctx = cv.getContext("2d")!;
+  let fontPx = 30;
+  const setFont = () => (ctx.font = `600 ${fontPx}px "Alpha Lyrae", ui-monospace, monospace`);
+  setFont();
+  while (ctx.measureText(text).width > 236 && fontPx > 13) {
+    fontPx -= 1;
+    setFont();
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = 7;
+  ctx.fillStyle = "rgba(246,250,255,0.92)";
+  ctx.fillText(text, 128, 34);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }),
+  );
+  sp.scale.set(2.5, 0.625, 1);
+  sp.renderOrder = 5;
+  return sp;
+}
 
 function build(teams: Team[], reduce: boolean): Built {
   const N = teams.length;
@@ -150,6 +181,16 @@ function build(teams: Team[], reduce: boolean): Built {
   points.frustumCulled = false;
   objects.push(points);
 
+  // Name label per team, floating just above each point (positions tracked in
+  // the frame loop so labels follow the intro animation + wobble).
+  const labels: THREE.Sprite[] = [];
+  teams.forEach((t) => {
+    const sp = nameSprite(t.team);
+    sp.material.opacity = reduce ? 0.72 : 0;
+    objects.push(sp);
+    labels.push(sp);
+  });
+
   // Nearest-neighbor network (3 nearest each).
   const adj: number[][] = Array.from({ length: N }, () => []);
   const edgeSet = new Set<string>();
@@ -207,7 +248,7 @@ function build(teams: Team[], reduce: boolean): Built {
 
   return {
     objects, points, geo, mat, staticLines,
-    basePos, curPos, baseSize, sizes, alphas, spark, adj, bolts, N,
+    basePos, curPos, baseSize, sizes, alphas, spark, adj, bolts, labels, N,
   };
 }
 
@@ -354,7 +395,7 @@ function Scene({
     // Hover pick (only once revealed).
     let hovered = -1;
     if (intro > 0.98) {
-      state.raycaster.params.Points!.threshold = 0.55;
+      state.raycaster.params.Points!.threshold = 0.85;
       state.raycaster.setFromCamera(state.pointer, state.camera);
       const hits = state.raycaster.intersectObject(built.points);
       const v = hits.find((h) => h.index != null && alphas[h.index] > 0.5);
@@ -370,9 +411,19 @@ function Scene({
       curPos[i * 3] = basePos[i].x * ease;
       curPos[i * 3 + 1] = basePos[i].y * ease + wob;
       curPos[i * 3 + 2] = basePos[i].z * ease;
-      const tgtS = i === hovered ? baseSize[i] * 1.7 : baseSize[i];
+      // Hovered point lights up: grows larger and keeps a steady spark glow.
+      if (i === hovered) spark[i] = Math.max(spark[i], 0.24);
+      const tgtS = i === hovered ? baseSize[i] * 2.1 : baseSize[i];
       sizes[i] += (tgtS - sizes[i]) * 0.2;
       (geo.attributes.aSize.array as Float32Array)[i] = sizes[i] + spark[i];
+
+      // Name label: track the point, fade in with the reveal, brighten on hover,
+      // dim when filtered out by an active tag.
+      const sp = built.labels[i];
+      sp.position.set(curPos[i * 3], curPos[i * 3 + 1] + 0.42, curPos[i * 3 + 2]);
+      const dimFactor = alphas[i] < 0.5 ? 0.12 : 1;
+      const lblTgt = ease * dimFactor * (i === hovered ? 1 : 0.72);
+      sp.material.opacity += (lblTgt - sp.material.opacity) * 0.15;
     }
     geo.attributes.position.needsUpdate = true;
     geo.attributes.aAlpha.needsUpdate = true;
@@ -424,12 +475,17 @@ export function Scatter3D({
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(wrapRef);
+  // Pause the idle auto-orbit while the pointer is over the scene so names are
+  // easy to hover on a still cloud; resume when the pointer leaves.
+  const [active, setActive] = useState(false);
 
   return (
     <div
       ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
-      style={{ height: "min(72vh, 640px)" }}
+      style={{ height: "min(80vh, 800px)" }}
+      onPointerEnter={() => setActive(true)}
+      onPointerLeave={() => setActive(false)}
       onClick={() => {
         const i = hoverRef.current;
         if (i >= 0 && i < teams.length) onSelect(teams[i]);
@@ -438,20 +494,26 @@ export function Scatter3D({
       <Canvas
         dpr={[1, 2]}
         frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
-        camera={{ position: [12, 8.5, 16], fov: 46, near: 0.1, far: 200 }}
+        camera={{ position: [10.5, 7.5, 13.5], fov: 48, near: 0.1, far: 200 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}
       >
         <Scene teams={teams} activeTagRef={activeTagRef} hoverRef={hoverRef} tooltipRef={tooltipRef} />
         <OrbitControls
+          makeDefault
           enableDamping
-          dampingFactor={0.08}
-          enablePan={false}
-          minDistance={10}
-          maxDistance={38}
+          dampingFactor={0.05}
+          rotateSpeed={0.55}
+          zoomSpeed={0.8}
+          panSpeed={0.6}
+          zoomToCursor
+          enablePan
+          screenSpacePanning
+          minDistance={7}
+          maxDistance={42}
           target={[0, 3.4, 0]}
-          autoRotate={!reduce}
-          autoRotateSpeed={0.55}
+          autoRotate={!reduce && !active}
+          autoRotateSpeed={0.5}
         />
       </Canvas>
 

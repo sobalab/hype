@@ -64,17 +64,26 @@ function labelSprite(text: string): THREE.Sprite {
   cv.width = 256;
   cv.height = 64;
   const ctx = cv.getContext("2d")!;
-  ctx.font = '600 26px "Alpha Lyrae", ui-monospace, monospace';
-  ctx.fillStyle = "rgba(251,253,254,0.82)";
+  let fontPx = 30;
+  const setFont = () => (ctx.font = `600 ${fontPx}px "Alpha Lyrae", ui-monospace, monospace`);
+  setFont();
+  while (ctx.measureText(text).width > 236 && fontPx > 13) {
+    fontPx -= 1;
+    setFont();
+  }
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = 7;
+  ctx.fillStyle = "rgba(248,251,255,0.92)";
   ctx.fillText(text, 128, 34);
   const tex = new THREE.CanvasTexture(cv);
   tex.minFilter = THREE.LinearFilter;
   const sp = new THREE.Sprite(
     new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }),
   );
-  sp.scale.set(8, 2, 1);
+  sp.scale.set(5, 1.25, 1);
+  sp.renderOrder = 5;
   return sp;
 }
 
@@ -160,17 +169,16 @@ function build(teams: Team[], mode: GapMode, reduce: boolean): Built {
         pi = i;
       }
     });
-    ridges.push({ line, m, pts, tag: t.story_tag, loud, baseOp, peak: pi, spark: 0, reveal: ti * 0.018 });
-  });
+    const ridge: Ridge = { line, m, pts, tag: t.story_tag, loud, baseOp, peak: pi, spark: 0, reveal: ti * 0.018 };
+    ridges.push(ridge);
 
-  // Peak labels for the 3 loudest ridges.
-  ridges.slice(0, 3).forEach((r, idx) => {
-    const p = r.pts[r.peak];
-    const sp = labelSprite(ordered[idx].team);
-    sp.position.set(p.x, p.y + 1.6, p.z);
-    sp.material.opacity = reduce ? 1 : 0;
+    // Peak name label for every ridge, visible from the start.
+    const p = pts[pi];
+    const sp = labelSprite(t.team);
+    sp.position.set(p.x, p.y + 1.3, p.z);
+    sp.material.opacity = reduce ? 0.7 : 0;
     objects.push(sp);
-    r.label = sp;
+    ridge.label = sp;
   });
 
   // Electric pulses.
@@ -210,14 +218,17 @@ function Scene({
   teams,
   mode,
   activeTagRef,
+  interactingRef,
 }: {
   teams: Team[];
   mode: GapMode;
   activeTagRef: React.RefObject<StoryTag | null>;
+  interactingRef: React.RefObject<boolean>;
 }) {
   const { scene, size } = useThree();
   const reduce = useReducedMotion() ?? false;
   const built = useMemo(() => build(teams, mode, reduce), [teams, mode, reduce]);
+  const proj = useRef(new THREE.Vector3());
 
   useEffect(() => {
     built.objects.forEach((o) => scene.add(o));
@@ -257,6 +268,26 @@ function Scene({
     const activeTag = activeTagRef.current;
     const electricOn = !reduce && el > 1.2;
 
+    // Screen-space nearest-ridge hover pick (hover anywhere along a ridgeline).
+    let hovered: Ridge | null = null;
+    if (interactingRef.current && el > 1) {
+      const px = s.pointer.x;
+      const py = s.pointer.y;
+      let best = 0.045 * 0.045;
+      for (const r of built.ridges) {
+        for (let k = 0; k < r.pts.length; k += 2) {
+          proj.current.copy(r.pts[k]).project(s.camera);
+          const dx = proj.current.x - px;
+          const dy = proj.current.y - py;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < best) {
+            best = d2;
+            hovered = r;
+          }
+        }
+      }
+    }
+
     for (const r of built.ridges) {
       if (!reduce) {
         const p = Math.max(0, Math.min(1, (el - r.reveal) / 0.7));
@@ -264,11 +295,18 @@ function Scene({
       }
       if (r.spark > 0) r.spark *= 0.86;
       const match = activeTag === null || r.tag === activeTag;
-      const tgt = (match ? r.baseOp : 0.04) + r.spark;
+      const isHover = r === hovered;
+      const base = match ? r.baseOp : 0.04;
+      // Hovered ridge lights up: brighter and thicker.
+      const tgt = (isHover ? Math.min(1, base + 0.45) : base) + r.spark;
       r.m.opacity += (tgt - r.m.opacity) * (reduce ? 1 : 0.15);
+      const baseLw = 1.1 + r.loud * 1.7;
+      const tgtLw = isHover ? baseLw * 1.9 : baseLw;
+      r.m.linewidth += (tgtLw - r.m.linewidth) * 0.2;
       if (r.label) {
-        const lt = match ? Math.min(1, el - 1) : 0;
-        r.label.material.opacity += (lt - r.label.material.opacity) * 0.1;
+        const revealed = reduce ? 1 : Math.max(0, Math.min(1, (el - 1 - r.reveal) / 0.6));
+        const lt = (match ? (isHover ? 1 : 0.7) : 0) * revealed;
+        r.label.material.opacity += (lt - r.label.material.opacity) * 0.12;
       }
     }
 
@@ -345,31 +383,47 @@ export function TimelineTerrain({ teams, mode }: { teams: Team[]; mode: GapMode 
   activeTagRef.current = activeTag;
   const wrapRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(wrapRef);
+  // Pause the idle auto-orbit while the pointer is over the scene; the ref feeds
+  // the hover-pick in the frame loop (only pick while the pointer is over).
+  const [active, setActive] = useState(false);
+  const interactingRef = useRef(false);
+  const setInteracting = (v: boolean) => {
+    interactingRef.current = v;
+    setActive(v);
+  };
 
   return (
     <div
       ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
-      style={{ height: "min(72vh, 640px)" }}
+      style={{ height: "min(80vh, 800px)" }}
+      onPointerEnter={() => setInteracting(true)}
+      onPointerLeave={() => setInteracting(false)}
     >
       <Canvas
         dpr={[1, 2]}
         frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
-        camera={{ position: [2, 18, 52], fov: 40, near: 0.1, far: 300 }}
+        camera={{ position: [2, 15, 43], fov: 42, near: 0.1, far: 300 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}
       >
-        <Scene teams={teams} mode={mode} activeTagRef={activeTagRef} />
+        <Scene teams={teams} mode={mode} activeTagRef={activeTagRef} interactingRef={interactingRef} />
         <OrbitControls
+          makeDefault
           enableDamping
-          dampingFactor={0.08}
-          enablePan={false}
-          minDistance={30}
-          maxDistance={100}
-          target={[0, 4, 0]}
+          dampingFactor={0.05}
+          rotateSpeed={0.55}
+          zoomSpeed={0.8}
+          panSpeed={0.6}
+          zoomToCursor
+          enablePan
+          screenSpacePanning
+          minDistance={22}
+          maxDistance={110}
+          target={[0, 3.5, 0]}
           maxPolarAngle={1.45}
-          autoRotate={!reduce}
-          autoRotateSpeed={0.35}
+          autoRotate={!reduce && !active}
+          autoRotateSpeed={0.32}
         />
       </Canvas>
 
@@ -400,7 +454,7 @@ export function TimelineTerrain({ teams, mode }: { teams: Team[]; mode: GapMode 
       </div>
 
       <div className="pointer-events-none absolute bottom-3 right-3 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-        Drag to orbit
+        Orbit · scroll zoom · right-drag pan
       </div>
     </div>
   );

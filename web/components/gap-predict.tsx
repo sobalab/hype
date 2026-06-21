@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Reorder, useReducedMotion } from "framer-motion";
+import { Reorder, useDragControls, useReducedMotion } from "framer-motion";
 
 import { Icon } from "@/components/icon";
 import { SPRING } from "@/components/motion/easing";
@@ -212,93 +212,140 @@ export function GapPredict({ teams, scope, onExit }: Props) {
           const delta = guessRank - idx; // + means it rose toward the top on reveal
           const widthPct = (Math.abs(gap) / maxGap) * 100;
           return (
-            <Reorder.Item
+            <PredictRow
               key={name}
-              value={name}
-              dragListener={!revealed}
-              transition={reduce ? { duration: 0 } : SPRING}
-              tabIndex={revealed ? -1 : 0}
-              role={revealed ? undefined : "button"}
-              aria-label={
-                revealed ? undefined : `${name}, position ${idx + 1}. Use arrow up or down to move.`
-              }
-              onKeyDown={(e) => {
-                if (revealed) return;
-                if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  move(name, -1);
-                } else if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  move(name, 1);
-                }
-              }}
-              className={`relative flex min-h-12 select-none items-center gap-3 overflow-hidden rounded-lg border px-3 py-2 ${
-                revealed
-                  ? "border-border bg-[rgba(255,255,255,0.02)]"
-                  : "cursor-grab border-border-hi bg-[rgba(255,255,255,0.04)] active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
-              }`}
-            >
-              {/* Revealed: a colored gap meter floods in behind the row. */}
-              {revealed && (
-                <div
-                  aria-hidden
-                  className="viz-grow-x absolute inset-y-0 left-0 -z-px"
-                  style={{
-                    width: `${widthPct}%`,
-                    background: `linear-gradient(90deg, ${color}22, ${color}05)`,
-                    transformOrigin: "left",
-                    animationDelay: `${Math.min(idx * 18, 700)}ms`,
-                  }}
-                />
-              )}
-
-              <span className="relative z-[1] w-6 shrink-0 text-center font-mono text-sm font-bold tabular-nums text-ink-2">
-                {idx + 1}
-              </span>
-
-              {!revealed && (
-                <Icon name="bullet" size={6} className="relative z-[1] shrink-0 text-ink-3" />
-              )}
-
-              <span className="relative z-[1] hidden w-7 shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
-                {String(t.seed).padStart(2, "0")}
-              </span>
-
-              <span className="relative z-[1] min-w-0 flex-1 truncate font-sans text-sm text-ink">
-                {t.team}
-              </span>
-
-              {revealed && (
-                <>
-                  <span
-                    className="relative z-[1] inline-flex min-w-[34px] shrink-0 items-center justify-center rounded-full border px-1.5 py-px font-mono text-xs font-bold tabular-nums"
-                    style={{ borderColor: `${color}66`, color }}
-                  >
-                    {gap > 0 ? `+${gap}` : gap}
-                  </span>
-                  <span
-                    className={`relative z-[1] w-12 shrink-0 text-right font-mono text-xs tabular-nums ${
-                      delta === 0 ? "text-underhyped" : "text-ink-2"
-                    }`}
-                  >
-                    {delta === 0
-                      ? "exact"
-                      : delta > 0
-                        ? `↑${delta}`
-                        : `↓${-delta}`}
-                  </span>
-                </>
-              )}
-
-              {!revealed && (
-                <span className="relative z-[1] shrink-0 font-mono text-base leading-none text-ink-3">
-                  ⠿
-                </span>
-              )}
-            </Reorder.Item>
+              name={name}
+              idx={idx}
+              team={t}
+              gap={gap}
+              color={color}
+              widthPct={widthPct}
+              delta={delta}
+              revealed={revealed}
+              reduce={!!reduce}
+              onMove={move}
+            />
           );
         })}
       </Reorder.Group>
     </div>
+  );
+}
+
+// One draggable row. Drag is bound to the grip handle only (via dragControls),
+// so touching anywhere else on the row scrolls the list instead of dragging.
+function PredictRow({
+  name,
+  idx,
+  team: t,
+  gap,
+  color,
+  widthPct,
+  delta,
+  revealed,
+  reduce,
+  onMove,
+}: {
+  name: string;
+  idx: number;
+  team: Team;
+  gap: number;
+  color: string;
+  widthPct: number;
+  delta: number;
+  revealed: boolean;
+  reduce: boolean;
+  onMove: (name: string, dir: -1 | 1) => void;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={name}
+      dragListener={false}
+      dragControls={controls}
+      transition={reduce ? { duration: 0 } : SPRING}
+      tabIndex={revealed ? -1 : 0}
+      role={revealed ? undefined : "button"}
+      aria-label={
+        revealed ? undefined : `${name}, position ${idx + 1}. Use arrow up or down to move.`
+      }
+      onKeyDown={(e) => {
+        if (revealed) return;
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          onMove(name, -1);
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          onMove(name, 1);
+        }
+      }}
+      className={`relative flex min-h-12 select-none items-center gap-3 overflow-hidden rounded-lg border px-3 py-2 ${
+        revealed
+          ? "border-border bg-[rgba(255,255,255,0.02)]"
+          : "border-border-hi bg-[rgba(255,255,255,0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
+      }`}
+    >
+      {/* Revealed: a colored gap meter floods in behind the row. */}
+      {revealed && (
+        <div
+          aria-hidden
+          className="viz-grow-x absolute inset-y-0 left-0 -z-px"
+          style={{
+            width: `${widthPct}%`,
+            background: `linear-gradient(90deg, ${color}22, ${color}05)`,
+            transformOrigin: "left",
+            animationDelay: `${Math.min(idx * 18, 700)}ms`,
+          }}
+        />
+      )}
+
+      <span className="relative z-[1] w-6 shrink-0 text-center font-mono text-sm font-bold tabular-nums text-ink-2">
+        {idx + 1}
+      </span>
+
+      {!revealed && (
+        <Icon name="bullet" size={6} className="relative z-[1] shrink-0 text-ink-3" />
+      )}
+
+      <span className="relative z-[1] hidden w-7 shrink-0 font-mono text-xs font-semibold tabular-nums text-core-bright sm:inline">
+        {String(t.seed).padStart(2, "0")}
+      </span>
+
+      <span className="relative z-[1] min-w-0 flex-1 truncate font-sans text-sm text-ink">
+        {t.team}
+      </span>
+
+      {revealed && (
+        <>
+          <span
+            className="relative z-[1] inline-flex min-w-[34px] shrink-0 items-center justify-center rounded-full border px-1.5 py-px font-mono text-xs font-bold tabular-nums"
+            style={{ borderColor: `${color}66`, color }}
+          >
+            {gap > 0 ? `+${gap}` : gap}
+          </span>
+          <span
+            className={`relative z-[1] w-12 shrink-0 text-right font-mono text-xs tabular-nums ${
+              delta === 0 ? "text-underhyped" : "text-ink-2"
+            }`}
+          >
+            {delta === 0 ? "exact" : delta > 0 ? `↑${delta}` : `↓${-delta}`}
+          </span>
+        </>
+      )}
+
+      {/* Grip handle — the only drag affordance. Touch-action:none lets it claim
+          the touch for dragging; the rest of the row keeps native scrolling. */}
+      {!revealed && (
+        <span
+          aria-hidden
+          onPointerDown={(e) => controls.start(e)}
+          style={{ touchAction: "none" }}
+          className="relative z-[1] -mr-1 flex shrink-0 cursor-grab items-center self-stretch px-2 font-mono text-base leading-none text-ink-3 transition-colors hover:text-ink-1 active:cursor-grabbing"
+        >
+          ⠿
+        </span>
+      )}
+    </Reorder.Item>
   );
 }

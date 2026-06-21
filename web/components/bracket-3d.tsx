@@ -68,6 +68,7 @@ type Tile = {
   round: number;
   team: Team;
   spark: number;
+  label: THREE.Sprite;
 };
 type ChainPt = { pos: THREE.Vector3; tile?: Tile; apex?: boolean };
 type Pulse = {
@@ -106,6 +107,36 @@ function labelSprite(text: string, color: string, scale: number): THREE.Sprite {
     new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }),
   );
   sp.scale.set(scale, scale * 0.25, 1);
+  return sp;
+}
+
+// Per-tile team name. Auto-shrinks the font so long names fit the texture, and
+// carries a soft shadow so the text reads against bright tiles behind it.
+function teamLabelSprite(text: string): THREE.Sprite {
+  const cv = document.createElement("canvas");
+  cv.width = 256;
+  cv.height = 64;
+  const ctx = cv.getContext("2d")!;
+  let fontPx = 30;
+  const setFont = () => (ctx.font = `600 ${fontPx}px "Alpha Lyrae", ui-monospace, monospace`);
+  setFont();
+  while (ctx.measureText(text).width > 236 && fontPx > 13) {
+    fontPx -= 1;
+    setFont();
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 7;
+  ctx.fillStyle = "rgba(246,250,255,0.94)";
+  ctx.fillText(text, 128, 34);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.minFilter = THREE.LinearFilter;
+  const sp = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false }),
+  );
+  sp.scale.set(3.4, 0.85, 1);
+  sp.renderOrder = 5;
   return sp;
 }
 
@@ -154,7 +185,12 @@ function build(teams: Team[], reduce: boolean): Built {
           mesh.position.set(p.x, p.y + 0.25, p.z);
           if (!reduce) mesh.scale.setScalar(0.001);
           objects.push(mesh);
-          const tile: Tile = { mesh, mat, base, baseEm, round, team, spark: 0 };
+          // Name label floats just above each tile, visible from the start.
+          const label = teamLabelSprite(team.team);
+          label.position.set(p.x, p.y + 0.25 + 0.95, p.z);
+          label.material.opacity = reduce ? 0.82 : 0;
+          objects.push(label);
+          const tile: Tile = { mesh, mat, base, baseEm, round, team, spark: 0, label };
           tiles.push(tile);
           tileByKey.set(`${region}-${round}-${i}`, tile);
         }
@@ -333,17 +369,26 @@ function Scene({
       : null;
 
     for (const t of built.tiles) {
-      if (!reduce) {
-        const delay = t.round * 0.22;
-        const p = Math.max(0, Math.min(1, (el - delay) / 0.55));
-        t.mesh.scale.setScalar(p <= 0 ? 0.001 : Math.max(0.001, easeOutBack(p)));
-      }
+      const delay = t.round * 0.22;
+      const reveal = reduce ? 1 : Math.max(0, Math.min(1, (el - delay) / 0.55));
+      const isHover = t.mesh === hoveredMesh;
+      // Reveal scale (easeOutBack) combined with a hover pop, lerped smoothly.
+      const revealScale = reduce ? 1 : reveal <= 0 ? 0.001 : Math.max(0.001, easeOutBack(reveal));
+      const tgtScale = revealScale * (isHover ? 1.16 : 1);
+      const cur = t.mesh.scale.x;
+      t.mesh.scale.setScalar(cur + (tgtScale - cur) * 0.3);
+
       if (t.spark > 0) t.spark *= 0.85;
       const dim = activeTag !== null && t.team.story_tag !== activeTag;
       t.mat.opacity += ((dim ? 0.12 : 1) - t.mat.opacity) * 0.15;
-      const isHover = t.mesh === hoveredMesh;
-      const tgt = dim ? 0.03 : (isHover ? 0.6 : t.baseEm) + t.spark;
+      // Hovered tile lights up brightly; sparks from passing pulses still add on.
+      const tgt = dim ? 0.03 : (isHover ? 1.35 : t.baseEm) + t.spark;
       t.mat.emissiveIntensity += (tgt - t.mat.emissiveIntensity) * 0.25;
+
+      // Label: fade in with the tile, brighten on hover, hide when filtered out.
+      const lblReveal = reduce ? 1 : Math.max(0, Math.min(1, (el - delay - 0.15) / 0.6));
+      const lblTgt = (dim ? 0 : isHover ? 1 : 0.82) * lblReveal;
+      t.label.material.opacity += (lblTgt - t.label.material.opacity) * 0.18;
     }
 
     crackle.current *= 0.9;
@@ -458,12 +503,17 @@ export function Bracket3D({
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(wrapRef);
+  // Pause the idle auto-orbit while the pointer is over the scene so tiles are
+  // easy to hover and read on a still bracket.
+  const [active, setActive] = useState(false);
 
   return (
     <div
       ref={wrapRef}
       className="relative w-full overflow-hidden rounded-[14px] border border-border bg-[#06070a]"
-      style={{ height: "min(74vh, 680px)" }}
+      style={{ height: "min(80vh, 800px)" }}
+      onPointerEnter={() => setActive(true)}
+      onPointerLeave={() => setActive(false)}
       onClick={() => {
         if (hoverRef.current) onSelect(hoverRef.current);
       }}
@@ -471,21 +521,27 @@ export function Bracket3D({
       <Canvas
         dpr={[1, 2]}
         frameloop={!onScreen ? "never" : reduce ? "demand" : "always"}
-        camera={{ position: [0, 33, 46], fov: 42, near: 0.1, far: 400 }}
+        camera={{ position: [0, 24, 35], fov: 46, near: 0.1, far: 400 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => gl.setClearColor(0x06070a, 1)}
       >
         <Scene teams={teams} activeTagRef={activeTagRef} hoverRef={hoverRef} tooltipRef={tooltipRef} />
         <OrbitControls
+          makeDefault
           enableDamping
-          dampingFactor={0.08}
-          enablePan={false}
-          minDistance={28}
-          maxDistance={92}
-          target={[0, 4.5, 0]}
+          dampingFactor={0.05}
+          rotateSpeed={0.55}
+          zoomSpeed={0.8}
+          panSpeed={0.6}
+          zoomToCursor
+          enablePan
+          screenSpacePanning
+          minDistance={18}
+          maxDistance={100}
+          target={[0, 8.5, 0]}
           maxPolarAngle={1.4}
-          autoRotate={!reduce}
-          autoRotateSpeed={0.4}
+          autoRotate={!reduce && !active}
+          autoRotateSpeed={0.38}
         />
       </Canvas>
 
@@ -523,7 +579,7 @@ export function Bracket3D({
       />
 
       <div className="pointer-events-none absolute bottom-3 right-3 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-        Drag to orbit
+        Orbit · scroll zoom · right-drag pan
       </div>
     </div>
   );
