@@ -1,9 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const PLAYBACK_RATE = 1.25;
 const FADE_MS = 700;
+// Persists across full reloads AND in-session page navigations, so the intro
+// video plays once per session and never replays when the root layout remounts.
+const SEEN_KEY = "hyp3:intro-seen";
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 export function IntroLoader() {
   const [done, setDone] = useState(false);
@@ -14,6 +20,30 @@ export function IntroLoader() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Skip the intro if it has already played this session (reload or navigation).
+  // Runs before paint so a returning view never flashes the black overlay.
+  useIsomorphicLayoutEffect(() => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(SEEN_KEY) === "1";
+      if (!seen) sessionStorage.setItem(SEEN_KEY, "1");
+    } catch {
+      // sessionStorage blocked (private mode, etc.) — just show it this time.
+    }
+    if (seen) {
+      setDone(true);
+      // Loader is skipped, so bloom the fluid background instead of waiting on
+      // its fallback timer. Defer a frame so its listener is already attached.
+      requestAnimationFrame(() => {
+        try {
+          window.dispatchEvent(new CustomEvent("hyp3:intro-dismissed"));
+        } catch {
+          // Non-fatal: the background has its own timed fallback.
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const mobile = window.matchMedia("(max-width: 767px)").matches;
