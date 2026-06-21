@@ -13,7 +13,7 @@ export function Footer({ data }: Props) {
       }}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-20 sm:gap-24">
-        {/* Wordmark + tagline — tight pair, Neue Black for both */}
+        {/* Wordmark + tagline — tight pair, Chakra Petch for both */}
         <div className="flex flex-col gap-3">
           <span
             className="font-display font-black leading-[0.95] tracking-[0.02em] text-ink"

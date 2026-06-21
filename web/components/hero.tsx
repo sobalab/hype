@@ -76,7 +76,6 @@ export function Hero({ data }: Props) {
                 aria-label="Explore the data"
                 className="cn-sel relative z-[1] inline-flex min-h-11 items-center gap-2.5 rounded-[9px] px-4 font-mono text-[12px] uppercase tracking-[0.14em] text-ink transition-transform duration-200 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:px-5"
               >
-                <span aria-hidden className="size-1.5 shrink-0 rounded-full cn-led cn-led-on" />
                 Explore the data
                 <span aria-hidden className="text-core-bright">→</span>
               </Link>

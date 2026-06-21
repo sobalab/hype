@@ -5,7 +5,7 @@
 /* Primary UI / body typeface is now Rubik (Google Fonts via next/font), which
    drives --font-sans below. Alpha Lyrae is retained only for the 3D canvas
    labels (bracket-3d / timeline-terrain), which need a real self-hosted family
-   name to render in <canvas>. The logo / HYP3 wordmark stays on Neue Black
+   name to render in <canvas>. The logo / HYP3 wordmark uses Chakra Petch
    (see .font-display). */
 @font-face {
   font-family: "Alpha Lyrae";
@@ -17,11 +17,32 @@
   font-display: swap;
 }
 
-/* Display font: Neue Black. */
+/* Display + mono/labels font: Chakra Petch. */
 @font-face {
-  font-family: "Neue Black";
-  src: url("/fonts/TheNeue-Black.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Medium.ttf") format("truetype");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
@@ -76,8 +97,8 @@
   --color-noise: var(--noise);
 
   --font-sans: var(--font-rubik), "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: "FA-1", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --font-display: "Neue Black", "Helvetica Neue", "Arial Black", system-ui, sans-serif;
+  --font-mono: "Chakra Petch", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: "Chakra Petch", "Helvetica Neue", "Arial Black", system-ui, sans-serif;
   --font-heading: var(--font-display);
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -216,7 +237,7 @@
     font-feature-settings: "ss01", "cv11", "tnum";
     /* Base body (Rubik) text size. Floored ≥16px to dodge iOS auto-zoom on
        inputs and meet the readable-on-mobile minimum. */
-    font-size: 17px;
+    font-size: 1rem;
     line-height: 1.5;
   }
   html {

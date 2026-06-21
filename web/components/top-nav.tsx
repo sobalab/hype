@@ -111,7 +111,7 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-40 bg-bg/95 backdrop-blur-md"
+      className="sticky top-0 z-40"
       style={{ paddingInline: "clamp(0.75rem, 3vw, 1.5rem)", paddingBlock: "0.6rem" }}
     >
       <nav
