@@ -330,10 +330,9 @@ export function TimelineHeatmap({
       <div className="overflow-hidden rounded-[14px] border border-border bg-bg-1">
         <div className="w-full overflow-x-auto overscroll-x-contain">
           <div
-            className="grid min-w-[680px] gap-px"
+            className="grid min-w-[680px]"
             style={{
               gridTemplateColumns: `200px repeat(${visibleBuckets.length}, minmax(28px, 1fr)) 60px`,
-              backgroundColor: "rgba(255,255,255,0.04)",
             }}
           >
             {/* Header row */}
@@ -401,12 +400,9 @@ export function TimelineHeatmap({
                           backgroundColor: bg,
                           boxShadow:
                             intensity > 0.75 ? `0 0 12px ${bg}99` : "none",
-                          borderLeft: b.isAnchor
-                            ? "1px solid rgba(114,184,255,0.6)"
-                            : undefined,
-                          margin: "6px 2px",
-                          borderRadius: 3,
-                          minHeight: 32,
+                          margin: "4px 3px",
+                          borderRadius: 7,
+                          minHeight: 36,
                           ...(revealing
                             ? { animationDelay: `${bi * COL_STEP}ms` }
                             : null),

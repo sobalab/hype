@@ -40,21 +40,21 @@ export function AboutSection() {
       className="relative border-b border-border bg-bg"
       style={{
         padding:
-          "clamp(3rem, 7vw, 5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
+          "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
       }}
     >
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
+      <div className="mx-auto flex max-w-[820px] flex-col items-center text-center">
+        <div className="mb-5 font-mono text-sm uppercase tracking-[0.18em] text-core-bright">
           About HYP3
         </div>
         <h2
-          className="m-0 mb-8 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+          className="m-0 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
           style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
         >
           We rank every team twice, then{" "}
           <span className="text-core-bright">subtract</span>.
         </h2>
-        <div className="grid grid-cols-1 gap-x-12 gap-y-6 lg:grid-cols-2">
+        <div className="mt-10 flex flex-col gap-6">
           <p className="m-0 text-base font-medium leading-relaxed text-white lg:text-[17px]">
             Twitter, ESPN, and Google all settle on a handful of favorites weeks
             before tipoff. The teams that actually win the bracket are usually a
@@ -82,20 +82,22 @@ export function FAQSection() {
       className="relative border-b border-border bg-bg-1"
       style={{
         padding:
-          "clamp(3rem, 7vw, 5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
+          "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
       }}
     >
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
-          FAQs
+      <div className="mx-auto max-w-[860px]">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 font-mono text-sm uppercase tracking-[0.18em] text-core-bright">
+            FAQs
+          </div>
+          <h2
+            className="m-0 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+            style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
+          >
+            Questions, answered.
+          </h2>
         </div>
-        <h2
-          className="m-0 mb-10 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-          style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
-        >
-          Questions, answered.
-        </h2>
-        <div className="overflow-hidden rounded-2xl border border-border bg-black/30">
+        <div className="mt-12 overflow-hidden rounded-2xl border border-border bg-black/30">
           {FAQS.map((item, i) => (
             <FAQItem
               key={item.q}
@@ -159,26 +161,28 @@ export function ApiSection() {
       className="relative border-b border-border bg-bg"
       style={{
         padding:
-          "clamp(3rem, 7vw, 5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
+          "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
       }}
     >
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
-          API & Data
+      <div className="mx-auto max-w-[900px]">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 font-mono text-sm uppercase tracking-[0.18em] text-core-bright">
+            API & Data
+          </div>
+          <h2
+            className="m-0 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+            style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
+          >
+            The whole dataset is one JSON file.
+          </h2>
+          <p className="m-0 mt-6 max-w-[640px] font-sans text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
+            No backend, no auth, no rate limits. The site bundles the year&apos;s
+            file at build time. Fetch it yourself and do whatever you want with
+            it, notebook, sketch, dashboard.
+          </p>
         </div>
-        <h2
-          className="m-0 mb-8 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-          style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
-        >
-          The whole dataset is one JSON file.
-        </h2>
-        <p className="m-0 mb-8 max-w-[720px] text-left font-sans text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
-          No backend, no auth, no rate limits. The site bundles the year&apos;s
-          file at build time. Fetch it yourself and do whatever you want with
-          it, notebook, sketch, dashboard.
-        </p>
 
-        <div className="mb-8 grid grid-cols-1 gap-3">
+        <div className="mb-8 mt-12 grid grid-cols-1 gap-3">
           <ApiRow
             method="GET"
             path="/data/2026.json"
@@ -191,7 +195,7 @@ export function ApiSection() {
           />
         </div>
 
-        <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-1">
+        <div className="mb-3 text-center font-mono text-sm uppercase tracking-[0.14em] text-ink-1">
           Schema <Icon name="bullet" size={12} className="mx-2 inline-block align-middle" /> per team
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-black/40">
@@ -220,7 +224,7 @@ export function ApiSection() {
           <SchemaRow field="season_*" type="various" desc="Same shape, computed over the full season (Nov 1 through Selection Sunday + 9)." last />
         </div>
 
-        <div className="mt-12 pl-4 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
+        <div className="mt-12 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-ink-2">
           <a
             href="https://github.com/baes358/hype"
             target="_blank"
@@ -291,24 +295,26 @@ export function SourcesSection() {
       className="relative border-b border-border bg-bg-1"
       style={{
         padding:
-          "clamp(3rem, 7vw, 5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
+          "clamp(4rem, 8vw, 6.5rem) clamp(1.25rem, 4vw, 2rem)",
       }}
     >
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
-          External Sources
+      <div className="mx-auto max-w-[900px]">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-5 font-mono text-sm uppercase tracking-[0.18em] text-core-bright">
+            External Sources
+          </div>
+          <h2
+            className="m-0 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+            style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
+          >
+            Where the data comes from.
+          </h2>
+          <p className="m-0 mt-6 max-w-[640px] text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
+            Three upstream sources, all cached locally. The live site
+            doesn&apos;t hit any of them at request time.
+          </p>
         </div>
-        <h2
-          className="m-0 mb-8 font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-          style={{ fontSize: "clamp(28px, 4.5vw, 48px)" }}
-        >
-          Where the data comes from.
-        </h2>
-        <p className="m-0 mb-8 max-w-[720px] text-base font-medium leading-relaxed text-[#D7EBFF] lg:text-[17px]">
-          Three upstream sources, all cached locally. The live site
-          doesn&apos;t hit any of them at request time.
-        </p>
-        <div className="grid grid-cols-1 gap-3">
+        <div className="mt-12 grid grid-cols-1 gap-3">
           <SourceCard
             label="Google Trends"
             href="https://trends.google.com/trends/"
