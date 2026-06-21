@@ -88,56 +88,57 @@ export function GapChart({
           "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
       }}
     >
-      <header className="mb-10 flex flex-col gap-10 md:mb-12 md:gap-12">
+      {/* Centered web3 intro — eyebrow + headline + stat centered; the
+          instructional caption stays left-aligned inside a centered block. */}
+      <header className="mb-12 flex flex-col items-center gap-8 text-center md:mb-16 md:gap-9">
         <div>
-          <div className="mb-4 flex items-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+          <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
             <span className="text-core-bright">01</span>
-            <span aria-hidden className="leading-none text-ink-3">/</span>
+            <span aria-hidden className="leading-none text-ink-3">·</span>
             <span className="text-ink-1">The Diverging Gap</span>
           </div>
           <h2
-            className="m-0 max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-            style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
+            className="m-0 mx-auto max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+            style={{ fontSize: "clamp(24px, 3vw, 38px)" }}
           >
             The biggest gaps between{" "}
             <span className="text-core-bright">attention</span> and{" "}
             <span className="text-core-bright">outcome</span>.
           </h2>
         </div>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-baseline gap-2.5">
-              <span
-                className="font-display font-bold leading-none text-ink"
-                style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
-              >
-                {rows.length}
-              </span>
-              <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
-                Teams
-              </span>
-            </div>
-            <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
-              Left = overhyped. Right = underhyped. Tap any row to expand team
-              details.
-            </p>
-          </div>
 
-          {!predicting && (
-            <button
-              type="button"
-              onClick={() => setPredicting(true)}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.1em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)]"
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-baseline gap-2.5">
+            <span
+              className="font-display font-bold leading-none text-ink"
+              style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
             >
-              <Icon name="bullet" size={6} className="inline-block" />
-              Predict the order
-            </button>
-          )}
+              {rows.length}
+            </span>
+            <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
+              Teams
+            </span>
+          </div>
+          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
+            Left = overhyped. Right = underhyped. Tap any row to expand team
+            details.
+          </p>
         </div>
 
         {!predicting && (
-          /* Color legend — vertical stack on mobile, full-width row on sm+. */
-          <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
+          <button
+            type="button"
+            onClick={() => setPredicting(true)}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-core-bright/45 bg-[rgba(18,119,222,0.12)] px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.1em] text-core-bright transition-colors hover:bg-[rgba(18,119,222,0.2)]"
+          >
+            <Icon name="bullet" size={6} className="inline-block" />
+            Predict the order
+          </button>
+        )}
+
+        {!predicting && (
+          /* Color legend — centered inline row. */
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-4 py-2.5">
             <LegendItem color="var(--overhyped)" label="Overhyped" />
             <LegendItem color="var(--noise)" label="Noise" />
             <LegendItem color="var(--as-expected)" label="As expected" />

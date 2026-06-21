@@ -116,7 +116,7 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
     >
       <nav
         aria-label="HYP3 console"
-        className="cn-console mx-auto flex max-w-[1440px] flex-col rounded-[18px] border border-border-hi px-3 py-2.5 sm:px-4"
+        className="cn-console mx-auto flex max-w-[1440px] flex-col rounded-[18px] border border-border-hi px-5 py-3 sm:px-6"
       >
         <span aria-hidden className="cn-screw" style={{ top: 9, left: 9 }} />
         <span aria-hidden className="cn-screw" style={{ top: 9, right: 9 }} />
@@ -130,18 +130,16 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
           <Link
             href="/"
             aria-label="HYP3 home"
-            className="flex shrink-0 items-center gap-2.5 pl-1 sm:pl-2"
+            className="flex shrink-0 items-center gap-2.5"
           >
-            <span className="flex size-10 items-center justify-center rounded-[10px] border border-core-bright/50 bg-bg-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-              <Image
-                src="/media/hype-logo.svg"
-                alt=""
-                width={39}
-                height={41}
-                priority
-                className="h-[18px] w-auto"
-              />
-            </span>
+            <Image
+              src="/media/hype-logo.svg"
+              alt=""
+              width={39}
+              height={41}
+              priority
+              className="h-7 w-auto"
+            />
             <span className="font-display text-[22px] font-black uppercase leading-none tracking-[0.03em] text-ink">
               HYP<span className="text-core-bright">3</span>
             </span>

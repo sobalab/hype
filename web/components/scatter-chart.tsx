@@ -134,7 +134,9 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
   }
 
   const W = isMobile ? 480 : 1200;
-  const H = isMobile ? 520 : 760;
+  // Square viewBox so the square container (aspect-ratio 1/1) is filled exactly
+  // — no letterboxing, no distortion. All padding/plot math derives from W/H.
+  const H = W;
   const PAD_L = isMobile ? 72 : 170;
   const PAD_R = isMobile ? 40 : 110;
   const PAD_T = isMobile ? 48 : 80;
@@ -234,24 +236,23 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
           "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
       }}
     >
-      <header className="mb-8 flex flex-col gap-10 md:mb-10 md:gap-12">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
-              <span className="text-core-bright">02</span> /{" "}
-              <span className="text-ink-1">The Scatter</span>
-            </div>
-            <h2
-              className="m-0 max-w-[820px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
-              style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
-            >
-              Draw your own <span className="text-core-bright">bet</span>. Distance
-              from your line is the <span className="text-core-bright">miss</span>.
-            </h2>
+      {/* Centered web3 intro — matches the Divergent template. */}
+      <header className="mb-12 flex flex-col items-center gap-8 text-center md:mb-16 md:gap-9">
+        <div>
+          <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+            <span className="text-core-bright">02</span>
+            <span aria-hidden className="leading-none text-ink-3">·</span>
+            <span className="text-ink-1">The Scatter</span>
           </div>
-          {lensToggle}
+          <h2
+            className="m-0 mx-auto max-w-[760px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
+            style={{ fontSize: "clamp(24px, 3vw, 38px)" }}
+          >
+            Draw your own <span className="text-core-bright">bet</span>. Distance
+            from your line is the <span className="text-core-bright">miss</span>.
+          </h2>
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col items-center gap-4">
           <div className="flex items-baseline gap-2.5">
             <span
               className="font-display font-bold leading-none text-ink"
@@ -263,19 +264,27 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
               Teams
             </span>
           </div>
-          <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
+          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
             Drag the line, or either end, to set how much hype should buy. Every
             dot recolors by its distance from your line.
           </p>
         </div>
+        {lensToggle}
       </header>
 
       {filterBar}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[1fr_300px] lg:items-start lg:gap-6">
+        {/* Leaderboards — above the chart on mobile (2-up from sm so they read
+            as squarer tiles); right column, lower, on desktop. */}
+        <div className="order-1 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:order-none lg:col-start-2 lg:row-start-2 lg:grid-cols-1">
+          <CalloutGroup label="Most underhyped" tag="underhyped" teams={calls.above} arrow="up-arrow" />
+          <CalloutGroup label="Most overhyped" tag="overhyped" teams={calls.below} arrow="down-arrow" />
+        </div>
+
         <div
-          className="relative order-1 flex-1 overflow-hidden rounded-[14px] border border-border bg-bg-1"
-          style={{ aspectRatio: isMobile ? "12 / 13" : "12 / 7.5" }}
+          className="relative order-2 overflow-hidden rounded-[14px] border border-border bg-bg-1 lg:order-none lg:col-start-1 lg:row-start-1 lg:row-span-2"
+          style={{ aspectRatio: "1 / 1" }}
         >
 
         <svg
@@ -543,7 +552,9 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
         </svg>
         </div>
 
-        <div className="order-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:w-[280px] lg:shrink-0 lg:flex-col lg:flex-nowrap lg:gap-4">
+        {/* Bet card — below the chart on mobile; top of the right column on
+            desktop. */}
+        <div className="order-3 lg:order-none lg:col-start-2 lg:row-start-1">
           <BetCard
             miss={miss}
             isCustom={isCustom}
@@ -552,8 +563,6 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
               onCommit(null);
             }}
           />
-          <CalloutGroup label="Most underhyped" tag="underhyped" teams={calls.above} arrow="up-arrow" />
-          <CalloutGroup label="Most overhyped" tag="overhyped" teams={calls.below} arrow="down-arrow" />
         </div>
       </div>
     </section>
@@ -580,7 +589,7 @@ function BetCard({
     }
   };
   return (
-    <div className="min-w-[200px] flex-1 rounded-[10px] border border-core-bright/40 bg-[rgba(18,119,222,0.10)] px-4 py-3 lg:flex-none">
+    <div className="h-full rounded-[12px] border border-core-bright/40 bg-[rgba(18,119,222,0.10)] px-5 py-4">
       <div className="mb-2 font-mono text-sm uppercase tracking-[0.14em] text-core-bright">
         Your bet line
       </div>
@@ -633,19 +642,22 @@ function CalloutGroup({
 }) {
   const color = TAG_COLOR[tag];
   return (
-    <div className="min-w-[200px] flex-1 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-4 py-3 lg:flex-none">
+    <div className="h-full rounded-[12px] border border-border bg-[rgba(255,255,255,0.025)] px-5 py-4">
       <div
-        className="mb-2 font-mono text-sm uppercase tracking-[0.14em]"
+        className="mb-3 font-mono text-sm uppercase tracking-[0.14em]"
         style={{ color }}
       >
         <Icon name={arrow} size={11} className="mr-1.5 inline-block align-middle" /> {label}
       </div>
-      <div className="flex flex-col gap-1">
-        {teams.map((t) => (
-          <div
+      <ol className="flex flex-col">
+        {teams.map((t, i) => (
+          <li
             key={t.team}
-            className="grid grid-cols-[44px_1fr_auto] items-center gap-2"
+            className="grid grid-cols-[16px_42px_1fr_auto] items-center gap-2.5 border-b border-border/40 py-2 last:border-0 last:pb-0"
           >
+            <span className="font-mono text-[12px] tabular-nums text-ink-3">
+              {i + 1}
+            </span>
             <span
               className="font-mono text-sm font-bold tabular-nums"
               style={{ color }}
@@ -656,9 +668,9 @@ function CalloutGroup({
             <span className="font-mono text-sm tabular-nums text-core-bright">
               {String(t.seed).padStart(2, "0")}
             </span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   );
 }

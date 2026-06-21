@@ -101,7 +101,7 @@ export function FilterBar({
       >
         <div className="min-h-0 overflow-hidden sm:overflow-visible">
           <div
-            className={`flex flex-col gap-6 border border-border bg-[rgba(255,255,255,0.025)] p-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-7 sm:gap-y-5 sm:!rounded-[12px] ${
+            className={`flex flex-col gap-7 border border-border bg-[rgba(255,255,255,0.025)] p-5 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-9 sm:gap-y-6 sm:p-6 sm:!rounded-[12px] ${
               open ? "rounded-b-[12px]" : "rounded-[12px]"
             }`}
           >
@@ -195,7 +195,7 @@ function FieldGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-2">
         {label}
         {sublabel && <span className="ml-1.5 text-ink-3">{sublabel}</span>}

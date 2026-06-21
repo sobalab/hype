@@ -219,7 +219,7 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 | [web/app/globals.css](web/app/globals.css) | Tailwind theme + dark tokens + `@font-face` (Alpha Lyrae [3D-canvas only] / Neue / FA-1) + the fluid-field, console-nav (`.cn-*`), grid/aurora, and viz-entrance CSS. Body font (Rubik) is loaded via `next/font` in `layout.tsx` |
 | [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag`, `projectTeamForMode`, `TAG_STYLE` tokens |
 | [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client shell holding filter/selection/`gapMode`/`scope`/`betLine`/year state + `UrlSync`; `view` prop renders gap/scatter/timeline/bracket |
-| [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav: bordered logo cell + wordmark, YEAR pill, horizontal channel tabs (roman · dot · name), and SYSTEM STATUS / LATENCY readouts. No scope toggle (filter bar owns it) and no "Channel" label. Landing ("/") = no active channel; optional year-stepper props only |
+| [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav: logo glyph + wordmark, YEAR pill, horizontal channel tabs (roman · dot · name), and SYSTEM STATUS / LATENCY readouts. Below `lg` it collapses to a hamburger drawer (logo + ☰ → YEAR + MODE + vertical channel list). Content is inset (`px-5 sm:px-6`) so it clears the corner screws. No scope toggle (filter bar owns it) and no "Channel" label. Landing ("/") = no active channel; optional year-stepper props only |
 | [web/components/filters.tsx](web/components/filters.tsx) | `FilterBar` — an **inline** filter strip (story_tag pills + region segmented + round dropdown + tournament/season SCOPE `ModeToggle` + reset). Rendered **inside each chart view, under its header** (not a floating/sticky bar); built once in app-shell and threaded down via a `filterBar` slot (mirrors `lensToggle`). Always-visible from `sm` up; collapses behind a "Filters" toggle below `sm`. `showScope` on for scatter/timeline/bracket, off for divergent (its own in-chart slider); `showRoundFilter` off for timeline/bracket |
 | [web/components/gap-chart.tsx](web/components/gap-chart.tsx) | Diverging bars (CSS) + continuous scope-slider morph + `Predict the order`; mounts `SpectrumCurrent` |
 | [web/components/{scatter,timeline,bracket}-view.tsx] | 2D/3D lens wrappers: own the toggle, lazy-load the r3f scene |
@@ -228,7 +228,7 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 | [web/components/gap-predict.tsx](web/components/gap-predict.tsx) | Divergent drag-to-predict mode (framer `Reorder`) → reveal + score |
 | [web/components/provenance.tsx](web/components/provenance.tsx) | Hover/tap source-trace popover (used by team-sheet KPIs) |
 | [web/components/floating-search.tsx](web/components/floating-search.tsx) | cmd+K palette: team search + "fork the data" commands |
-| [web/components/team-sheet.tsx](web/components/team-sheet.tsx) | shadcn Sheet: season curve + KPI block, each KPI source-traced via `Provenance` |
+| [web/components/team-sheet.tsx](web/components/team-sheet.tsx) | Team dossier as a **centered modal** (radix Dialog — same primitive `ui/sheet` uses, no new dep; centered card at all sizes, scrolls within 90dvh). Team-name-led centered header + context line, gap callout, 4-col stat grid, season curve. Each KPI source-traced via `Provenance`. (Export is still `TeamSheet`.) |
 | [web/lib/use-is-mobile.ts] / [web/lib/use-on-screen.ts] | shared hooks: flash-free media query, IntersectionObserver visibility |
 
 ### Filter state is page-local
@@ -271,6 +271,10 @@ To retheme story_tag colors (or invert which tag is "danger" coded), edit `TAG_S
 
 [components/fluid-background.tsx](web/components/fluid-background.tsx) is an app-wide z-0 layer (blurred drifting blobs that ease toward the cursor) mounted in the root layout. It reads `--aurora-intensity` / `--grid-opacity` (defaults in `:root`) and blooms in on the `hyp3:intro-dismissed` event from the loader. Ambient rAF loops (fluid bg, `spectrum-current`) are **capped to ~30fps** and pause on `visibilitychange` — keep that cap (halves blurred-layer recompositing). (A dev-only `TweaksPanel` that wrote those CSS vars + the `[data-bg-grid]` class live was removed; the vars now take their `:root` defaults.)
 
+### Centered web3 header template (all four views)
+
+Every view's `<header>` follows one centered template: a centered column (`flex flex-col items-center gap-8 text-center md:gap-9`, `mb-12 md:mb-16`) of mono eyebrow (`0X · The …`, `·` separator not `/`) → centered headline (`clamp(24px,3vw,38px)`, `mx-auto max-w-[760px]`) → centered count + a **left-aligned** caption inside the centered block → the per-view control **centered** below (lens toggle on scatter/timeline/bracket; "Predict the order" on divergent; timeline also centers its SORT, bracket its Legend). The lens toggle uses `self-center` so it's content-width + centered (not stretched) at every breakpoint. Spacing is intentionally airy but measured; the same scale is used in the filter bar and the team modal. Keep new/edited headers on this template.
+
 ### Four views, one 2D/3D lens convention
 
 The four routes (`/divergent /scatter /timeline /bracket`) each render `<AppShell view=...>`. Scatter/Timeline/Bracket expose a **2D/3D lens toggle** via a `lensToggle` header slot: the wrapper (`*-view.tsx`) owns the toggle and `dynamic(() => …, { ssr: false })`-imports the r3f scene so **three.js never SSRs and is a separate lazy chunk** (loaded only when 3D opens). The electric/3D scenes use raw three via `three/addons` inside r3f. **Divergent has no 3D model on purpose** — it's a 2D editorial chart, so it gets the `SpectrumCurrent` 2D canvas overlay instead.
@@ -298,6 +302,7 @@ The nav year control offers only `YEARS = [2026]` in app-shell (renders as a sta
 - **No JS breakpoint flash:** use `useIsMobile`/`useMediaQuery` from [lib/use-is-mobile.ts](web/lib/use-is-mobile.ts) (isomorphic layout-effect corrects before paint; initial state `false` matches SSR — do not lazy-init from `window` or it mismatches).
 - **Root clips horizontal overflow:** `overflow-x: clip` is on **both** `html` and `body` (clip, not hidden, to preserve sticky nav). Section headers stack the lens toggle below the headline on mobile (`flex-col sm:flex-row`). The nav channel group is full-width-own-line below `lg` so its scroller is container-bounded.
 - **Deferred load lever:** `web/data.json` is ~861KB bundled (≈311KB is `season_hype_daily`, used by the team sheet AND the season-mode heatmap). Splitting it out is a wider refactor — left bundled for now.
+- **Site-wide `zoom: 0.8`:** the content wrapper in [layout.tsx](web/app/layout.tsx) carries `style={{ zoom: 0.8 }}` so the whole UI renders at the tighter scale the design was tuned at (≈ an 80% browser zoom). It's on the **content wrapper, not `<body>`**, on purpose — the fixed full-viewport `FluidBackground`/`IntroLoader` are siblings and must stay un-zoomed or they'd shrink to 80% and expose gaps. Don't move the zoom up to body/html. (Trade-off: tap targets also scale, so the `min-h-11` 44px targets render ~35px.)
 
 ## Common workflows
 

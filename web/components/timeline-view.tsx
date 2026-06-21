@@ -44,7 +44,7 @@ export function TimelineView(props: Props) {
     <div
       role="group"
       aria-label="Timeline view"
-      className="inline-flex shrink-0 self-start rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
+      className="inline-flex shrink-0 self-center rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
     >
       {(["2d", "3d"] as const).map((l) => {
         const active = lens === l;
@@ -76,15 +76,16 @@ export function TimelineView(props: Props) {
             "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
         }}
       >
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <header className="mb-12 flex flex-col items-center gap-8 text-center md:mb-16 md:gap-9">
           <div>
-            <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
-              <span className="text-core-bright">03</span> /{" "}
+            <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+              <span className="text-core-bright">03</span>
+              <span aria-hidden className="leading-none text-ink-3">·</span>
               <span className="text-ink-1">The Timeline</span>
             </div>
             <h2
-              className="m-0 max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-              style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
+              className="m-0 mx-auto max-w-[760px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+              style={{ fontSize: "clamp(24px, 3vw, 38px)" }}
             >
               The hype window as <span className="text-core-bright">terrain</span>.
               Loud ridges <span className="text-core-bright">crackle</span>.

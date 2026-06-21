@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { Dialog as DialogPrimitive } from "radix-ui";
+import { XIcon } from "lucide-react";
 
 import { Icon } from "@/components/icon";
 import { Provenance, ProvInfo } from "@/components/provenance";
 import { useIsMobile } from "@/lib/use-is-mobile";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Dataset, GapMode, StoryTag, TAG_LABEL, Team } from "@/lib/data";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -50,7 +45,7 @@ function shortDate(iso: string): string {
 }
 
 function formatAcceleration(v: number): string {
-  if (!Number.isFinite(v) || v < 0) return ",";
+  if (!Number.isFinite(v) || v < 0) return "—";
   return v < 100 ? `${v.toFixed(1)}×` : `${Math.round(v)}×`;
 }
 
@@ -78,6 +73,8 @@ function gapStoryCopy(
   return `Hyped at rank #${active.hypeRank}, performed in line. Exactly as expected.`;
 }
 
+// Centered modal (radix Dialog — same primitive the side Sheet used, no new
+// dep). Centered card at every breakpoint; scrolls within a 90dvh cap.
 export function TeamSheet({
   team,
   mode,
@@ -88,32 +85,42 @@ export function TeamSheet({
   meta,
 }: Props) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full overflow-y-auto bg-bg-1 sm:max-w-2xl! sm:overflow-hidden"
-      >
-        {team && (
-          <TeamSheetBody
-            team={team}
-            mode={mode}
-            hypeWindowStart={hypeWindowStart}
-            hypeWindowEnd={hypeWindowEnd}
-            meta={meta}
-          />
-        )}
-        {!team && (
-          <SheetHeader>
-            <SheetTitle>Loading…</SheetTitle>
-            <SheetDescription>Pick a team to see details.</SheetDescription>
-          </SheetHeader>
-        )}
-      </SheetContent>
-    </Sheet>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-[640px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto overscroll-contain rounded-2xl border border-border-hi bg-bg-1 shadow-[0_30px_90px_-24px_rgba(0,0,0,0.9)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95"
+        >
+          {team ? (
+            <TeamModalBody
+              team={team}
+              mode={mode}
+              hypeWindowStart={hypeWindowStart}
+              hypeWindowEnd={hypeWindowEnd}
+              meta={meta}
+            />
+          ) : (
+            <div className="p-6">
+              <DialogPrimitive.Title className="font-display text-lg text-ink">
+                Loading…
+              </DialogPrimitive.Title>
+            </div>
+          )}
+
+          <DialogPrimitive.Close
+            aria-label="Close"
+            className="absolute right-4 top-4 z-10 inline-flex size-9 items-center justify-center rounded-lg border border-border bg-bg-2/80 text-ink-2 backdrop-blur transition-colors hover:border-border-hi hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
+          >
+            <XIcon className="size-4" />
+          </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 
-function TeamSheetBody({
+function TeamModalBody({
   team,
   mode,
   hypeWindowStart,
@@ -126,9 +133,7 @@ function TeamSheetBody({
   hypeWindowEnd: string;
   meta: Dataset["metadata"];
 }) {
-  // All headline copy reads from `active` so the panel reflects the current
-  // mode the user selected in the filter bar. The opposite-mode counterparts
-  // surface in the secondary stat grid.
+  // Headline copy reads from `active` so the panel reflects the current mode.
   const active = {
     gap: mode === "season" ? team.season_gap : team.gap,
     storyTag: mode === "season" ? team.season_story_tag : team.story_tag,
@@ -140,9 +145,6 @@ function TeamSheetBody({
   };
   const other = {
     gap: mode === "season" ? team.gap : team.season_gap,
-    hypeRank: mode === "season" ? team.hype_rank : team.season_hype_rank,
-    perfRank:
-      mode === "season" ? team.performance_rank : team.season_performance_rank,
   };
   const color = TAG_COLOR[active.storyTag];
   const seasonDaily =
@@ -223,14 +225,6 @@ function TeamSheetBody({
             ],
       note: pulled,
     },
-    seasonWL: {
-      label: "Season record",
-      lines: [
-        { k: "Source", v: "NCAA season standings API" },
-        { k: "Note", v: "Overall, includes the tournament" },
-      ],
-      note: pulled,
-    },
     perfAccel: {
       label: "Performance acceleration",
       lines: [
@@ -242,61 +236,51 @@ function TeamSheetBody({
 
   return (
     <div
-      className="relative isolate flex flex-col gap-5 sm:h-full sm:min-h-0 sm:gap-2.5"
-      style={{ padding: "clamp(1.25rem, 4vw, 1.5rem)" }}
+      className="relative isolate flex flex-col gap-7 sm:gap-8"
+      style={{ padding: "clamp(1.75rem, 4.5vw, 2.5rem)" }}
     >
-      {/* Aurora glow behind */}
+      {/* Aurora glow behind the header */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[400px] opacity-40 blur-[60px]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[360px] opacity-40 blur-[60px]"
         style={{
-          background: `radial-gradient(circle, ${color}33, transparent 60%)`,
+          background: `radial-gradient(circle at 50% 0%, ${color}33, transparent 65%)`,
         }}
       />
 
-      <SheetHeader className="gap-0 p-0 sm:shrink-0">
-        <div className="mb-3 font-mono text-[13px] uppercase tracking-[0.18em] text-ink-2 sm:mb-2">
-          TEAM DOSSIER
+      {/* Header — team-name-led, centered. Context folded into one meta line. */}
+      <header className="flex flex-col items-center gap-4 text-center">
+        <DialogPrimitive.Title
+          className="m-0 break-words font-display font-bold leading-tight tracking-[-0.01em] text-ink"
+          style={{ fontSize: "clamp(28px, 6vw, 40px)" }}
+        >
+          {team.team}
+        </DialogPrimitive.Title>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2">
+          <span className="tabular-nums text-core-bright">
+            #{String(team.seed).padStart(2, "0")} SEED
+          </span>
+          <Dot />
+          <span>{team.region} Region</span>
+          <Dot />
+          <span className="tabular-nums">
+            {team.season_wins}–{team.season_losses}
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 tracking-[0.1em]"
+            style={{ color, borderColor: `${color}55`, background: `${color}11` }}
+          >
+            <Icon name="bullet" size={9} />
+            {TAG_LABEL[active.storyTag]}
+          </span>
         </div>
-        <div className="mb-4 flex items-center gap-4 sm:mb-0">
-          <div className="flex flex-col gap-2.5 sm:gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm font-bold tabular-nums tracking-[0.06em] text-core-bright">
-                #{String(team.seed).padStart(2, "0")}
-              </span>
-              <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[12px] uppercase tracking-[0.14em] text-ink-1">
-                {team.region.toUpperCase()} REGION
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[12px] uppercase tracking-[0.1em]"
-                style={{
-                  color,
-                  borderColor: `${color}55`,
-                  background: `${color}11`,
-                }}
-              >
-                <Icon name="bullet" size={9} />
-                {TAG_LABEL[active.storyTag]}
-              </span>
-            </div>
-            <SheetTitle
-              className="m-0 break-words font-display font-bold leading-tight tracking-[-0.01em] text-ink"
-              style={{ fontSize: "clamp(24px, 5vw, 32px)" }}
-            >
-              {team.team}
-            </SheetTitle>
-          </div>
-        </div>
-        <SheetDescription className="sr-only">
-          {team.wins} {team.wins === 1 ? "win" : "wins"} in the {team.region} region.
-        </SheetDescription>
-      </SheetHeader>
+      </header>
 
-      {/* Big gap callout — mode-aware. */}
-      <div className="rounded-2xl border border-border bg-[rgba(255,255,255,0.025)] px-5 py-5 sm:shrink-0 sm:px-6 sm:py-3.5">
+      {/* Gap callout — centered number/label; story sentence left-aligned. */}
+      <div className="rounded-2xl border border-border bg-[rgba(255,255,255,0.025)] px-6 py-7 text-center">
         <Provenance
           info={prov.gapActive}
-          className="mb-2 font-mono text-[13px] uppercase tracking-[0.14em] text-ink-2 sm:mb-1.5"
+          className="mb-2 inline-flex justify-center font-mono text-[12px] uppercase tracking-[0.16em] text-ink-2"
         >
           {modeLabel} Gap
         </Provenance>
@@ -305,67 +289,56 @@ function TeamSheetBody({
           style={{
             color,
             textShadow: "0 0 24px currentColor",
-            fontSize: "clamp(40px, 6vw, 48px)",
+            fontSize: "clamp(44px, 8vw, 56px)",
           }}
         >
           {gap > 0 ? `+${gap}` : gap}
         </div>
-        <div className="mt-3 max-w-[480px] font-sans text-[15px] leading-[1.45] text-ink-1 sm:mt-2.5">
+        <p className="mx-auto mt-3 max-w-[460px] text-left font-sans text-[15px] leading-[1.5] text-ink-1">
           {gapStoryCopy(mode, team, active, gap)}
-        </div>
+        </p>
       </div>
 
-      {/* Stats + chart. On short desktop viewports (≤850px, the `compact`
-          variant) this region becomes a two-column row — stat grid beside the
-          chart — so the panel still fits without scrolling. Otherwise (mobile
-          and tall desktop) it stacks vertically with the chart filling. */}
-      <div className="flex flex-col gap-5 sm:min-h-0 sm:flex-1 sm:gap-2.5 compact:flex-row compact:gap-4">
-        {/* Stat grid — 2 cols normally, single column in the compact row so the
-            labels fit the narrower column. */}
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:shrink-0 compact:w-[316px] compact:grid-cols-1 compact:self-start">
-        <SheetStat label="Wins" value={String(team.wins)} prov={prov.wins} />
-        <SheetStat label={`${modeLabel} hype rank`} value={`#${active.hypeRank}`} prov={prov.hypeRank} />
-        <SheetStat
-          label={`${modeLabel} hype index`}
-          value={active.hypeIndex.toFixed(1)}
-          prov={prov.hypeIndex}
-        />
-        <SheetStat
-          label={`${otherModeLabel} gap`}
-          value={other.gap > 0 ? `+${other.gap}` : `${other.gap}`}
-          prov={prov.gapOther}
-        />
-        <SheetStat
+      {/* Stat grid — 2 cols on mobile, 4 across from sm. */}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
+        <Stat label="Wins" value={String(team.wins)} prov={prov.wins} />
+        <Stat label={`${modeLabel} hype`} value={`#${active.hypeRank}`} prov={prov.hypeRank} />
+        <Stat label={`${modeLabel} perf`} value={`#${active.perfRank}`} prov={prov.perfRank} />
+        <Stat label="Hype index" value={active.hypeIndex.toFixed(1)} prov={prov.hypeIndex} />
+        <Stat
           label="Hype accel"
           value={formatAcceleration(team.hype_acceleration)}
           prov={prov.hypeAccel}
         />
-        <SheetStat label={`${modeLabel} perf rank`} value={`#${active.perfRank}`} prov={prov.perfRank} />
-        <SheetStat
-          label="Season W–L"
-          value={`${team.season_wins}–${team.season_losses}`}
-          prov={prov.seasonWL}
-        />
-        <SheetStat
+        <Stat
           label="Perf accel"
           value={formatAcceleration(team.performance_acceleration)}
           prov={prov.perfAccel}
         />
+        <Stat
+          label={`${otherModeLabel} gap`}
+          value={other.gap > 0 ? `+${other.gap}` : `${other.gap}`}
+          prov={prov.gapOther}
+        />
+        <Stat label="Peak" value={peak.value.toFixed(0)} sub={shortDate(peak.date)} />
       </div>
 
-        {/* Full season curve */}
-        <ChartBlock
-          data={seasonDaily}
-          color={color}
-          peak={peak}
-          windowStart={hypeWindowStart}
-          windowEnd={hypeWindowEnd}
-          team={team}
-          showTournamentWindow={mode === "tournament"}
-        />
-      </div>
+      {/* Full season curve */}
+      <ChartBlock
+        data={seasonDaily}
+        color={color}
+        peak={peak}
+        windowStart={hypeWindowStart}
+        windowEnd={hypeWindowEnd}
+        team={team}
+        showTournamentWindow={mode === "tournament"}
+      />
     </div>
   );
+}
+
+function Dot() {
+  return <span aria-hidden className="text-ink-3">·</span>;
 }
 
 function ChartBlock({
@@ -387,12 +360,10 @@ function ChartBlock({
 }) {
   const [view, setView] = useState<"area" | "line">("area");
   return (
-    <div className="flex flex-col gap-2 pt-4 sm:min-h-0 sm:flex-1 sm:pt-1">
-      <div className="flex flex-col items-start gap-2 sm:shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <span className="font-mono text-[13px] uppercase tracking-[0.16em] text-ink-1 sm:text-sm">
-          {showTournamentWindow
-            ? "FULL SEASON HYPE CURVE"
-            : "SEASON HYPE CURVE"}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span className="font-mono text-[13px] uppercase tracking-[0.16em] text-ink-1">
+          {showTournamentWindow ? "Full season hype curve" : "Season hype curve"}
         </span>
         <div className="inline-flex shrink-0 rounded-md border border-border bg-[rgba(255,255,255,0.025)] p-0.5">
           {(["area", "line"] as const).map((v) => {
@@ -424,26 +395,28 @@ function ChartBlock({
         view={view}
         showTournamentWindow={showTournamentWindow}
       />
-      <div className="font-mono text-[12px] tracking-[0.1em] text-ink-2 sm:shrink-0">
+      <div className="font-mono text-[12px] tracking-[0.1em] text-ink-2">
         peaked {peak.value.toFixed(0)} on {shortDate(peak.date)}
       </div>
     </div>
   );
 }
 
-function SheetStat({
+function Stat({
   label,
   value,
+  sub,
   prov,
 }: {
   label: string;
   value: string;
+  sub?: string;
   prov?: ProvInfo;
 }) {
   const labelCls =
-    "break-words font-mono text-[12px] uppercase tracking-[0.12em] text-ink-2 sm:tracking-[0.08em] compact:text-[11px] compact:leading-tight compact:tracking-[0.04em]";
+    "break-words font-mono text-[11px] uppercase tracking-[0.1em] text-ink-2";
   return (
-    <div className="bg-bg-1 px-5 py-3.5 sm:px-5 sm:py-2 compact:py-1.5">
+    <div className="bg-bg-1 px-5 py-4">
       {prov ? (
         <Provenance info={prov} className={labelCls}>
           <span>{label}</span>
@@ -451,16 +424,21 @@ function SheetStat({
       ) : (
         <div className={labelCls}>{label}</div>
       )}
-      <div className="mt-1.5 font-display text-[22px] font-bold leading-none text-ink sm:mt-1 sm:text-[20px]">
+      <div className="mt-1.5 font-display text-[20px] font-bold leading-none text-ink">
         {value}
       </div>
+      {sub && (
+        <div className="mt-1 font-mono text-[11px] tracking-[0.08em] text-ink-3">
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
 
 function formatHoverDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
-  const monthShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1];
+  const monthShort = MONTHS[m - 1];
   return `${monthShort} ${d}, ${y}`;
 }
 
@@ -486,30 +464,13 @@ function Curve({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [pinnedIdx, setPinnedIdx] = useState<number | null>(null);
-  // On desktop the chart flexes to fill the leftover sheet height; we measure
-  // that height and feed it into the SVG's pixel math so the curve + overlays
-  // fit the viewport without scrolling. Mobile keeps a fixed scrollable height.
-  const [fluidH, setFluidH] = useState(360);
 
-  // Reserve space for the "Tournament window" badge only when the band is
-  // shown (season-mode hides the badge so the chart can sit closer to the
-  // toggle above it).
+  // Reserve space for the "Tournament window" badge only when shown.
   const topPad = showTournamentWindow ? 28 : 0;
 
-  useEffect(() => {
-    if (isMobile) return;
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const h = el.clientHeight - topPad;
-      if (h > 0) setFluidH(Math.max(135, h));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isMobile, topPad]);
-
   const W = 600;
-  const H = isMobile ? 300 : fluidH;
+  // Fixed height (the modal scrolls), so no fluid measuring is needed.
+  const H = isMobile ? 260 : 320;
   const PAD_L = 72;
   const PAD_R = 16;
   const PAD_T = 44;
@@ -531,8 +492,6 @@ function Curve({
     .join(" ");
   const fillPath = `${linePath} L ${x(data.length - 1)} ${H - PAD_B} L ${x(0)} ${H - PAD_B} Z`;
 
-  // Tournament-window band — hidden in season mode where the whole chart
-  // already represents the season.
   const wStartIdx = showTournamentWindow
     ? data.findIndex((d) => d.date >= windowStart)
     : -1;
@@ -544,11 +503,8 @@ function Curve({
   const endX = startX !== null ? x(wEndIdx) : null;
 
   const gradId = `curve-fill-${team.team.replace(/\W/g, "")}`;
-
-  // y-axis ticks (0, 50, 100 normalized to actual max).
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((p) => p * max);
 
-  // Selected index — pinned wins over hover.
   const activeIdx = pinnedIdx ?? hoverIdx;
   const activePoint = activeIdx != null ? data[activeIdx] : null;
 
@@ -566,29 +522,13 @@ function Curve({
     setHoverIdx(idx);
   };
 
-  // Tooltip placement (HTML overlay positioned absolutely within the wrapper).
-  // Use percentages so it scales with the SVG.
-  const tooltipLeftPct =
-    activeIdx != null ? (x(activeIdx) / W) * 100 : null;
+  const tooltipLeftPct = activeIdx != null ? (x(activeIdx) / W) * 100 : null;
   const tooltipTopPct =
-    activeIdx != null
-      ? (y(data[activeIdx].value) / H) * 100
-      : null;
-
-  // Tournament-window label anchor as a percent so it scales with the SVG.
-  const windowLabelLeftPct =
-    startX !== null ? (startX / W) * 100 : null;
+    activeIdx != null ? (y(data[activeIdx].value) / H) * 100 : null;
+  const windowLabelLeftPct = startX !== null ? (startX / W) * 100 : null;
 
   return (
-    <div
-      ref={wrapRef}
-      className="relative sm:min-h-0 sm:flex-1"
-      style={{ paddingTop: topPad }}
-    >
-      {/* Y-axis tick labels — HTML overlay so text isn't horizontally squished
-          by the SVG's preserveAspectRatio="none". The SVG's height is fixed at
-          H pixels, so y(v) viewBox-units lines up 1:1 with pixel y-offset
-          inside the chart area; we offset by topPad above. */}
+    <div ref={wrapRef} className="relative" style={{ paddingTop: topPad }}>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 z-[1]"
@@ -611,15 +551,10 @@ function Curve({
         ))}
       </div>
 
-      {/* Tournament-window label — HTML overlay above the chart, anchored to
-          the band's left edge with clamp() so it never clips. */}
       {windowLabelLeftPct !== null && (
         <div
           className="pointer-events-none absolute top-0 z-[2] inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-core-bright/55 bg-bg-2/95 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] text-core-bright"
           style={
-            // When the band is in the second half of the chart, right-anchor
-            // the badge so it never spills past the chart's right edge.
-            // Otherwise left-anchor it to the band's start.
             windowLabelLeftPct > 50
               ? { right: "0px" }
               : { left: `${windowLabelLeftPct}%` }
@@ -654,7 +589,6 @@ function Curve({
           </linearGradient>
         </defs>
 
-        {/* Y-axis grid (tick labels are rendered as HTML overlay above) */}
         {yTicks.map((v, i) => (
           <line
             key={i}
@@ -667,7 +601,6 @@ function Curve({
           />
         ))}
 
-        {/* Tournament-window band — stronger fill + saturated border. */}
         {startX !== null && endX !== null && (
           <rect
             x={startX}
@@ -680,20 +613,13 @@ function Curve({
           />
         )}
 
-        {/* Area fill — only in area view. Solid baseline + gradient on top so
-            the area state is unambiguously distinct from line. */}
         {view === "area" && (
           <>
-            <path
-              d={fillPath}
-              fill={color}
-              fillOpacity="0.10"
-            />
+            <path d={fillPath} fill={color} fillOpacity="0.10" />
             <path d={fillPath} fill={`url(#${gradId})`} />
           </>
         )}
 
-        {/* Stroke */}
         <path
           d={linePath}
           fill="none"
@@ -703,7 +629,6 @@ function Curve({
           strokeLinejoin="round"
         />
 
-        {/* Hover guideline + dot */}
         {activeIdx != null && (
           <g pointerEvents="none">
             <line
@@ -727,28 +652,25 @@ function Curve({
         )}
       </svg>
 
-      {/* HTML tooltip overlay — positioned in % so it scales with the SVG. */}
-      {activePoint &&
-        tooltipLeftPct !== null &&
-        tooltipTopPct !== null && (
-          <div
-            className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-md border border-border-hi bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.7)]"
-            style={{
-              left: `clamp(64px, ${tooltipLeftPct}%, calc(100% - 64px))`,
-              top: `calc(${tooltipTopPct}% - 56px)`,
-            }}
-          >
-            <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2">
-              {formatHoverDate(activePoint.date)}
-            </div>
-            <div
-              className="mt-1 font-display text-[18px] font-bold leading-none tabular-nums"
-              style={{ color }}
-            >
-              {activePoint.value.toFixed(1)}
-            </div>
+      {activePoint && tooltipLeftPct !== null && tooltipTopPct !== null && (
+        <div
+          className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-md border border-border-hi bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-6px_rgba(0,0,0,0.7)]"
+          style={{
+            left: `clamp(64px, ${tooltipLeftPct}%, calc(100% - 64px))`,
+            top: `calc(${tooltipTopPct}% - 56px)`,
+          }}
+        >
+          <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-2">
+            {formatHoverDate(activePoint.date)}
           </div>
-        )}
+          <div
+            className="mt-1 font-display text-[18px] font-bold leading-none tabular-nums"
+            style={{ color }}
+          >
+            {activePoint.value.toFixed(1)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -91,42 +91,41 @@ export function BracketTree({
           "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
       }}
     >
-      <header className="mb-8 flex flex-col gap-6 md:mb-10 md:gap-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-10 md:gap-12">
-          <div>
-            <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
-              <span className="text-core-bright">04</span> /{" "}
-              <span className="text-ink-1">The Bracket</span>
-            </div>
-            <h2
-              className="m-0 max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
-              style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
+      {/* Centered web3 intro — matches the Divergent template. */}
+      <header className="mb-12 flex flex-col items-center gap-8 text-center md:mb-16 md:gap-9">
+        <div>
+          <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+            <span className="text-core-bright">04</span>
+            <span aria-hidden className="leading-none text-ink-3">·</span>
+            <span className="text-ink-1">The Bracket</span>
+          </div>
+          <h2
+            className="m-0 mx-auto max-w-[760px] font-display font-bold leading-[1.4em] tracking-[-0.005em] text-ink"
+            style={{ fontSize: "clamp(24px, 3vw, 38px)" }}
+          >
+            Every matchup,{" "}
+            <span className="text-core-bright">colored</span> by whether the
+            internet got it right
+          </h2>
+        </div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-baseline gap-2.5">
+            <span
+              className="font-display font-bold leading-none text-ink"
+              style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
             >
-              Every matchup,{" "}
-              <span className="text-core-bright">colored</span> by whether the
-              internet got it right
-            </h2>
+              {teams.length}
+            </span>
+            <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
+              Teams
+            </span>
           </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-baseline gap-2.5">
-              <span
-                className="font-display font-bold leading-none text-ink"
-                style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
-              >
-                {teams.length}
-              </span>
-              <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
-                Teams
-              </span>
-            </div>
-            <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
-              The bracket as it played out, recolored by who was oversold.
-            </p>
-          </div>
+          <p className="m-0 max-w-md text-left text-base leading-[1.6] text-[#D7EBFF]">
+            The bracket as it played out, recolored by who was oversold.
+          </p>
         </div>
-          {lensToggle}
-        </div>
+
+        {lensToggle}
 
         <Legend />
       </header>
@@ -239,7 +238,7 @@ function ChampionBanner({
 
 function Legend() {
   return (
-    <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-4 py-2.5">
       {(Object.keys(TAG_COLOR) as StoryTag[]).map((tag) => (
         <span
           key={tag}

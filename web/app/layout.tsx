@@ -33,7 +33,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans font-medium">
         <FluidBackground />
         <IntroLoader />
-        <div className="relative z-[1] flex min-h-full flex-1 flex-col">
+        {/* Site-wide 0.8 zoom — renders the whole UI at the tighter scale the
+            design was tuned at (equivalent to an 80% browser zoom). Applied to
+            the content wrapper, NOT <body>, so the fixed full-viewport
+            FluidBackground/IntroLoader keep covering the screen. */}
+        <div
+          className="relative z-[1] flex min-h-full flex-1 flex-col"
+          style={{ zoom: 0.8 }}
+        >
           {children}
         </div>
         <FloatingSearch />
