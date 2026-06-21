@@ -216,7 +216,7 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 | [web/app/page.tsx](web/app/page.tsx) | `/` — server, mounts `<AppShell view="gap">` |
 | [web/app/bracket/page.tsx](web/app/bracket/page.tsx) | `/bracket` — server, mounts `<AppShell view="bracket">` |
 | [web/app/layout.tsx](web/app/layout.tsx) | Loads fonts + metadata; mounts `FluidBackground`, `IntroLoader`, `FloatingSearch`, dev-only `TweaksPanel` |
-| [web/app/globals.css](web/app/globals.css) | Tailwind theme + dark tokens + `@font-face` (Alpha Lyrae / Neue / FA-1) + the fluid-field, console-nav (`.cn-*`), grid/aurora, and viz-entrance CSS |
+| [web/app/globals.css](web/app/globals.css) | Tailwind theme + dark tokens + `@font-face` (Alpha Lyrae [3D-canvas only] / Neue / FA-1) + the fluid-field, console-nav (`.cn-*`), grid/aurora, and viz-entrance CSS. Body font (Rubik) is loaded via `next/font` in `layout.tsx` |
 | [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag`, `projectTeamForMode`, `TAG_STYLE` tokens |
 | [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client shell holding filter/selection/`gapMode`/`scope`/`betLine`/year state + `UrlSync`; `view` prop renders gap/scatter/timeline/bracket |
 | [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav (channel tabs + scope toggle + year + signal); optional interactive props (landing mounts navigation-only) |
@@ -246,9 +246,9 @@ The app is **dark** (charcoal surface ramp `--bg #16161a` → `--bg-3`, white-is
 | Token | Value | Where |
 |---|---|---|
 | Accent | blue core ramp `--core #1277de` → `--core-bright #72b8ff` | `text-core`/`text-core-bright`. `--brand` aliases `--core-bright` |
-| Primary UI font | **Alpha Lyrae Medium (500)** | `@font-face` in `globals.css` from `web/public/fonts/AlphaLyrae-Medium.woff2`; drives `--font-sans`. Used across the whole interface |
+| Primary UI font | **Rubik (400/500/700)** | `next/font/google` in `layout.tsx`, `--font-rubik`, preloaded; drives `--font-sans`. Used across the whole interface |
 | Logo font | Neue Black | `@font-face` from `TheNeue-Black.woff2`; `--font-display`, auto-applies to `h1`–`h6` and `.font-display`. **Logo / HYP3 wordmark only** — do not use Neue elsewhere |
-| Fallback font | Host Grotesk | `next/font/google`, `--font-host`, `preload: false` (Alpha Lyrae is primary, so it's a non-preloaded swap fallback only) |
+| 3D canvas labels | Alpha Lyrae Medium (500) | `@font-face` in `globals.css` from `web/public/fonts/AlphaLyrae-Medium.woff2`. **Only** used by the `<canvas>` `ctx.font` in `bracket-3d.tsx` / `timeline-terrain.tsx` (canvas needs a real self-hosted family name); no longer the UI font |
 | Mono / labels | FA-1 Regular | `@font-face` from `FA-1-Regular.otf`; `font-mono`, `tracking-normal` |
 | Story tag colors | neon-pastel `#f995b6` / `#66e7d8` / `#efecaf` / `#b4b4ef` | `--overhyped/underhyped/as-expected/noise`; per-component `TAG_RGB`/`TAG_COLOR` maps mirror these |
 | Live indicator | `--live #ff7a3d` | console-nav "live channel" LEDs |

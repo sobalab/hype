@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { Host_Grotesk } from "next/font/google";
+import { Rubik } from "next/font/google";
 import "./globals.css";
 import { FloatingSearch } from "@/components/floating-search";
 import { FluidBackground } from "@/components/fluid-background";
 import { IntroLoader } from "@/components/intro-loader";
 import { TweaksPanel } from "@/components/tweaks-panel";
 
-// Host Grotesk is only a fallback now (Alpha Lyrae is the primary UI face and
-// is self-hosted). Don't preload it on the critical path — it loads lazily only
-// if the fallback actually renders during Alpha Lyrae's brief swap window.
-const hostGrotesk = Host_Grotesk({
-  variable: "--font-host",
+// Rubik is the primary UI / body face, served from Google Fonts via next/font
+// (self-optimized + preloaded). It drives --font-sans in globals.css.
+const rubik = Rubik({
+  variable: "--font-rubik",
   weight: ["400", "500", "700"],
   subsets: ["latin"],
-  preload: false,
   display: "swap",
 });
 
@@ -31,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${hostGrotesk.variable} h-full antialiased`}
+      className={`${rubik.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans font-medium">
         <FluidBackground />

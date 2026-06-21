@@ -68,10 +68,11 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
   const effYears = years ?? [dataset.metadata.tournament_year];
   const effYear = currentYear ?? dataset.metadata.tournament_year;
 
-  const activeIndex = Math.max(
-    0,
-    CHANNELS.findIndex((c) => c.href === pathname),
-  );
+  // -1 on the landing route ("/") and any non-channel path: no channel is
+  // active, so the sliding highlight + LED stay in their resting state. Only an
+  // actual channel route lights up. (Do NOT collapse this to Math.max(0, …) —
+  // that forced Divergent to read as active on the front door.)
+  const activeIndex = CHANNELS.findIndex((c) => c.href === pathname);
 
   // Publish nav height as a CSS var so the filter toolbar can stack below it.
   useEffect(() => {
@@ -171,8 +172,8 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
         <span aria-hidden className="cn-screw" style={{ bottom: 9, left: 9 }} />
         <span aria-hidden className="cn-screw" style={{ bottom: 9, right: 9 }} />
 
-        {/* Unit — logo + year, nudged right (no power LED) */}
-        <Group label="Unit" className="pl-2 sm:pl-3">
+        {/* Logo + year, nudged right (no power LED, no group label) */}
+        <div className="flex flex-col justify-center gap-1.5 pl-2 sm:pl-3">
           <Link
             href="/"
             aria-label="HYP3 home"
@@ -211,7 +212,7 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
               <span className="font-mono text-[14px] tabular-nums text-ink">{effYear}</span>
             )}
           </div>
-        </Group>
+        </div>
 
         <span aria-hidden className="cn-divider hidden lg:block" />
 

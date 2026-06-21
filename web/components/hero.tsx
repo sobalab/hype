@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Dataset, Team } from "@/lib/data";
 
 type Props = { data: Dataset };
@@ -88,6 +90,24 @@ export function Hero({ data }: Props) {
           See how we measured 2026.{" "}
 
         </p>
+
+        {/* Primary entry into the default view (Divergent), plus a quiet link to
+            the anchored methodology docs further down this page. */}
+        <div className="mb-10 flex flex-wrap items-center gap-4 lg:mb-14">
+          <Link
+            href="/divergent"
+            className="inline-flex items-center gap-2 rounded-full bg-core-bright px-6 py-3 font-mono text-[13px] font-medium uppercase tracking-[0.12em] text-black shadow-[0_0_32px_rgba(114,184,255,0.4)] transition-transform hover:-translate-y-px hover:bg-core-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            Explore the data
+            <span aria-hidden>→</span>
+          </Link>
+          <a
+            href="#about"
+            className="inline-flex items-center font-mono text-[13px] uppercase tracking-[0.12em] text-ink-2 underline-offset-4 transition-colors hover:text-ink hover:underline"
+          >
+            How it works
+          </a>
+        </div>
 
         {/* Stat row — 2×2 on mobile, 4-across on desktop. */}
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4">

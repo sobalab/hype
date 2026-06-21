@@ -2,9 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Primary UI typeface: Alpha Lyrae Medium. Drives the whole interface via
-   --font-sans below. The only exception is the logo / HYP3 wordmark, which
-   stays on Neue Black (see .font-display). */
+/* Primary UI / body typeface is now Rubik (Google Fonts via next/font), which
+   drives --font-sans below. Alpha Lyrae is retained only for the 3D canvas
+   labels (bracket-3d / timeline-terrain), which need a real self-hosted family
+   name to render in <canvas>. The logo / HYP3 wordmark stays on Neue Black
+   (see .font-display). */
 @font-face {
   font-family: "Alpha Lyrae";
   src:
@@ -73,7 +75,7 @@
   --color-as-expected: var(--as-expected);
   --color-noise: var(--noise);
 
-  --font-sans: "Alpha Lyrae", var(--font-host), "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: var(--font-rubik), "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "FA-1", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-display: "Neue Black", "Helvetica Neue", "Arial Black", system-ui, sans-serif;
   --font-heading: var(--font-display);
