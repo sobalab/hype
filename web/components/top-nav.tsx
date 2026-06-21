@@ -160,7 +160,7 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
 
           {/* Channel — horizontal tabs (roman, dot, name), centered. Desktop
               (lg+) only; below lg it lives in the hamburger drawer. */}
-          <div className="hidden min-w-0 lg:flex lg:flex-1 lg:justify-center">
+          <div className="hidden min-w-0 lg:flex lg:flex-1 lg:justify-end">
             <div
               ref={trackRef}
               className="cn-track relative flex w-max items-stretch gap-1 rounded-[12px] p-[5px]"
@@ -208,22 +208,6 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
                 );
               })}
             </div>
-          </div>
-
-          <span aria-hidden className="cn-divider hidden xl:block" />
-
-          {/* System status + latency — decorative readouts, xl+ only */}
-          <div className="hidden items-center gap-6 pr-1 xl:flex">
-            <Group label="System status">
-              <span className="font-mono text-[13px] uppercase tracking-[0.12em] text-core-bright">
-                Optimized
-              </span>
-            </Group>
-            <Group label="Latency">
-              <span className="font-mono text-[15px] tabular-nums tracking-[0.04em] text-ink">
-                0.02ms
-              </span>
-            </Group>
           </div>
 
           {/* Hamburger — below lg, pushed to the right edge */}
@@ -350,25 +334,6 @@ function YearControl({
       ) : (
         <span className="font-mono text-[15px] tabular-nums text-ink">{effYear}</span>
       )}
-    </div>
-  );
-}
-
-function Group({
-  label,
-  children,
-  className,
-}: {
-  label: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`flex flex-col justify-center gap-1.5 ${className ?? ""}`}>
-      <span className="pl-0.5 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-3">
-        {label}
-      </span>
-      {children}
     </div>
   );
 }
