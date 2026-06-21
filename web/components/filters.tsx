@@ -68,7 +68,11 @@ export function FilterBar({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-controls="hyp3-inline-filters"
-        className="mb-2 inline-flex min-h-10 w-full items-center justify-between gap-3 rounded-[10px] border border-border-hi bg-[var(--surface)] px-3.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:hidden"
+        className={`inline-flex min-h-10 w-full items-center justify-between gap-3 border bg-[var(--surface)] px-3.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 sm:hidden ${
+          open
+            ? "rounded-t-[12px] border-border border-b-0"
+            : "mb-2 rounded-[10px] border-border-hi"
+        }`}
       >
         <span className="inline-flex items-center gap-2">
           {!open && (
@@ -96,7 +100,11 @@ export function FilterBar({
         }`}
       >
         <div className="min-h-0 overflow-hidden sm:overflow-visible">
-          <div className="flex flex-col gap-6 rounded-[12px] border border-border bg-[rgba(255,255,255,0.025)] p-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-7 sm:gap-y-5">
+          <div
+            className={`flex flex-col gap-6 border border-border bg-[rgba(255,255,255,0.025)] p-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-7 sm:gap-y-5 sm:!rounded-[12px] ${
+              open ? "rounded-b-[12px]" : "rounded-[12px]"
+            }`}
+          >
             {showScope && (
               <FieldGroup label="Scope">
                 <ModeToggle mode={mode} setMode={setMode} />

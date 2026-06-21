@@ -136,23 +136,25 @@ export function GapChart({
         </div>
 
         {!predicting && (
-          <>
-            {/* Scope morph — drag from tournament to season and watch every bar
-                flow between its two positions. */}
-            <ScopeSlider value={scope} onChange={onScopeChange} />
-
-            {/* Color legend — vertical stack on mobile, full-width row on sm+. */}
-            <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
-              <LegendItem color="var(--overhyped)" label="Overhyped" />
-              <LegendItem color="var(--noise)" label="Noise" />
-              <LegendItem color="var(--as-expected)" label="As expected" />
-              <LegendItem color="var(--underhyped)" label="Underhyped" />
-            </div>
-          </>
+          /* Color legend — vertical stack on mobile, full-width row on sm+. */
+          <div className="flex w-full flex-col items-start gap-3 rounded-[10px] border border-border bg-[rgba(255,255,255,0.025)] px-3.5 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
+            <LegendItem color="var(--overhyped)" label="Overhyped" />
+            <LegendItem color="var(--noise)" label="Noise" />
+            <LegendItem color="var(--as-expected)" label="As expected" />
+            <LegendItem color="var(--underhyped)" label="Underhyped" />
+          </div>
         )}
       </header>
 
       {!predicting && filterBar}
+
+      {!predicting && (
+        /* Scope morph — sits below the filters, directly above the chart, so
+           dragging from tournament to season flows every bar in place. */
+        <div className="mb-6 md:mb-8">
+          <ScopeSlider value={scope} onChange={onScopeChange} />
+        </div>
+      )}
 
       {predicting && (
         <GapPredict

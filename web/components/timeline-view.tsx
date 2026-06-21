@@ -44,7 +44,7 @@ export function TimelineView(props: Props) {
     <div
       role="group"
       aria-label="Timeline view"
-      className="inline-flex rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
+      className="inline-flex shrink-0 self-start rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
     >
       {(["2d", "3d"] as const).map((l) => {
         const active = lens === l;
@@ -76,7 +76,7 @@ export function TimelineView(props: Props) {
             "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
         }}
       >
-        <header className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-8">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
               <span className="text-core-bright">03</span> /{" "}

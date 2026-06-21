@@ -211,45 +211,47 @@ export function TimelineHeatmap({
           "clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) clamp(3rem, 7vw, 5rem)",
       }}
     >
-      <header className="mb-10 flex flex-col gap-6 md:mb-12 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-8">
-        <div className="flex flex-col gap-10 md:gap-12">
-          <div>
-            <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
-              <span className="text-core-bright">03</span> /{" "}
-              <span className="text-ink-1">The Timeline</span>
-            </div>
-            <h2
-              className="m-0 max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
-              style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
-            >
-              Which teams peaked{" "}
-              <span className="text-core-bright">early</span>. Which ones peaked
-              at the <span className="text-core-bright">buzzer</span>.
-            </h2>
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-baseline gap-2.5">
-              <span
-                className="font-display font-bold leading-none text-ink"
-                style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
+      <header className="mb-8 flex flex-col gap-6 md:mb-10 md:gap-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-10 md:gap-12">
+            <div>
+              <div className="mb-3 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
+                <span className="text-core-bright">03</span> /{" "}
+                <span className="text-ink-1">The Timeline</span>
+              </div>
+              <h2
+                className="m-0 max-w-[720px] font-display font-bold leading-[1.4em] tracking-[-0.01em] text-ink"
+                style={{ fontSize: "clamp(22px, 2.6vw, 34px)" }}
               >
-                {sortedTeams.length}
-              </span>
-              <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
-                Teams
-              </span>
+                Which teams peaked{" "}
+                <span className="text-core-bright">early</span>. Which ones peaked
+                at the <span className="text-core-bright">buzzer</span>.
+              </h2>
             </div>
-            <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
-              One row per team, one column per{" "}
-              {mode === "season" ? "month" : "day"}. Watch where the heat lands.
-            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-baseline gap-2.5">
+                <span
+                  className="font-display font-bold leading-none text-ink"
+                  style={{ fontSize: "clamp(26px, 4.5vw, 36px)" }}
+                >
+                  {sortedTeams.length}
+                </span>
+                <span className="font-mono text-sm uppercase tracking-[0.16em] text-ink-2">
+                  Teams
+                </span>
+              </div>
+              <p className="m-0 max-w-md text-base leading-[1.6] text-[#D7EBFF]">
+                One row per team, one column per{" "}
+                {mode === "season" ? "month" : "day"}. Watch where the heat lands.
+              </p>
+            </div>
           </div>
+
+          {lensToggle}
         </div>
 
-        <div className="flex flex-col items-start gap-4 md:items-end">
-          {lensToggle}
-          {/* Sort */}
-          <div className="flex flex-col gap-1.5">
+        {/* Sort */}
+        <div className="flex flex-col items-start gap-1.5">
           <span className="font-mono text-sm uppercase tracking-[0.18em] text-ink-3">
             SORT
           </span>
@@ -272,7 +274,6 @@ export function TimelineHeatmap({
                 </button>
               );
             })}
-          </div>
           </div>
         </div>
       </header>

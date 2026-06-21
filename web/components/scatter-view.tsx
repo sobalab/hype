@@ -40,7 +40,7 @@ export function ScatterView({ teams, mode, value, onCommit, filterBar, selectedT
     <div
       role="group"
       aria-label="Scatter view"
-      className="inline-flex shrink-0 rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
+      className="inline-flex shrink-0 self-start rounded-lg border border-border bg-[rgba(0,0,0,0.25)] p-0.5"
     >
       {(["2d", "3d"] as const).map((l) => {
         const active = lens === l;
