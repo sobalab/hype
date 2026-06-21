@@ -76,15 +76,21 @@ export function Filters({
     <div
       className={`sticky top-[var(--hyp3-nav-h,0px)] z-30 border-y-[1.5px] bg-bg shadow-[0_10px_28px_-16px_rgba(0,0,0,0.7)] transition-[transform,border-color] duration-300 ease-in-out ${hidden ? "pointer-events-none -translate-y-full" : ""}`}
       style={{
-        borderTopColor: open ? "var(--border-hi)" : "transparent",
-        borderBottomColor: open ? "var(--border-hi)" : "var(--border)",
+        // Borderless when collapsed so the toggle reads as part of the console
+        // region above it (the drop shadow still separates it when stuck on
+        // scroll); the full-width frame only appears once the drawer opens.
+        borderTopColor: "transparent",
+        borderBottomColor: open ? "var(--border-hi)" : "transparent",
       }}
     >
       <div
-        className="mx-auto flex max-w-[1180px] flex-col"
+        // Match the nav console's width + inline padding so the toggle lines up
+        // under the console's left edge instead of floating indented.
+        className="mx-auto flex max-w-[1440px] flex-col"
         style={{
-          paddingBlock: "1.5rem",
-          paddingInline: "clamp(1.25rem, 4vw, 2rem)",
+          paddingTop: "0.55rem",
+          paddingBottom: open ? "1.5rem" : "0.55rem",
+          paddingInline: "clamp(0.75rem, 3vw, 1.5rem)",
         }}
       >
         {/* Master toggle — visible at every breakpoint. Stretches full-width
@@ -94,7 +100,7 @@ export function Filters({
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="hyp3-filter-panel"
-          className="group inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-border-hi bg-[var(--surface)] px-3.5 py-2 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:border-border-strong hover:text-ink md:min-h-9 md:w-auto md:self-start md:px-3 md:py-1"
+          className="cn-track group inline-flex h-11 w-full items-center justify-between gap-3 rounded-[10px] px-3.5 font-display text-[12px] font-black uppercase tracking-[0.12em] text-ink-1 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 md:h-10 md:w-auto md:min-w-[150px] md:self-start md:px-3.5 lg:ml-1"
         >
           <span className="inline-flex items-center gap-2">
             {!open && (

@@ -215,12 +215,12 @@ The fix: [web/next.config.ts](web/next.config.ts) sets `distDir: ".next.nosync"`
 |---|---|
 | [web/app/page.tsx](web/app/page.tsx) | `/` — server, mounts `<AppShell view="gap">` |
 | [web/app/bracket/page.tsx](web/app/bracket/page.tsx) | `/bracket` — server, mounts `<AppShell view="bracket">` |
-| [web/app/layout.tsx](web/app/layout.tsx) | Loads fonts + metadata; mounts `FluidBackground`, `IntroLoader`, `FloatingSearch`, dev-only `TweaksPanel` |
+| [web/app/layout.tsx](web/app/layout.tsx) | Loads fonts + metadata; mounts `FluidBackground`, `IntroLoader`, `FloatingSearch` |
 | [web/app/globals.css](web/app/globals.css) | Tailwind theme + dark tokens + `@font-face` (Alpha Lyrae [3D-canvas only] / Neue / FA-1) + the fluid-field, console-nav (`.cn-*`), grid/aurora, and viz-entrance CSS. Body font (Rubik) is loaded via `next/font` in `layout.tsx` |
 | [web/lib/data.ts](web/lib/data.ts) | Typed `Dataset`/`Team`/`StoryTag`, `projectTeamForMode`, `TAG_STYLE` tokens |
 | [web/components/app-shell.tsx](web/components/app-shell.tsx) | Client shell holding filter/selection/`gapMode`/`scope`/`betLine`/year state + `UrlSync`; `view` prop renders gap/scatter/timeline/bracket |
-| [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav (channel tabs + scope toggle + year + signal); optional interactive props (landing mounts navigation-only) |
-| [web/components/filters.tsx](web/components/filters.tsx) | story_tag + region + round pills (scope toggle removed; nav owns it) |
+| [web/components/top-nav.tsx](web/components/top-nav.tsx) | Instrument-console nav: bordered logo cell + wordmark, YEAR pill, horizontal channel tabs (roman · dot · name), and SYSTEM STATUS / LATENCY readouts. No scope toggle (filter bar owns it) and no "Channel" label. Landing ("/") = no active channel; optional year-stepper props only |
+| [web/components/filters.tsx](web/components/filters.tsx) | story_tag + region + round pills + the tournament/season SCOPE toggle (`ModeToggle`, group "A"). `showScope` is on for scatter/timeline/bracket, off for divergent (which has its own in-chart slider) |
 | [web/components/gap-chart.tsx](web/components/gap-chart.tsx) | Diverging bars (CSS) + continuous scope-slider morph + `Predict the order`; mounts `SpectrumCurrent` |
 | [web/components/{scatter,timeline,bracket}-view.tsx] | 2D/3D lens wrappers: own the toggle, lazy-load the r3f scene |
 | [web/components/{scatter-3d,timeline-terrain,bracket-3d}.tsx] | react-three-fiber electric scenes (cloud / terrain / tree) |
@@ -251,9 +251,9 @@ The app is **dark** (charcoal surface ramp `--bg #16161a` → `--bg-3`, white-is
 | 3D canvas labels | Alpha Lyrae Medium (500) | `@font-face` in `globals.css` from `web/public/fonts/AlphaLyrae-Medium.woff2`. **Only** used by the `<canvas>` `ctx.font` in `bracket-3d.tsx` / `timeline-terrain.tsx` (canvas needs a real self-hosted family name); no longer the UI font |
 | Mono / labels | FA-1 Regular | `@font-face` from `FA-1-Regular.otf`; `font-mono`, `tracking-normal` |
 | Story tag colors | neon-pastel `#f995b6` / `#66e7d8` / `#efecaf` / `#b4b4ef` | `--overhyped/underhyped/as-expected/noise`; per-component `TAG_RGB`/`TAG_COLOR` maps mirror these |
-| Live indicator | `--live #ff7a3d` | console-nav "live channel" LEDs |
+| Live indicator | `--live #ff7a3d` | defined token; no longer used by the nav (the active-channel LED `.cn-led-on` is now blue `--core-bright` to match the nav redesign) |
 
-Charcoal/grid/aurora defaults (`--bg` charcoal, `--grid-opacity 0.8`, `--aurora-intensity 0.15`) live in BOTH `:root` (globals.css) and `DEFAULTS` in [tweaks-panel.tsx](web/components/tweaks-panel.tsx) — keep them in sync.
+Charcoal/grid/aurora defaults (`--bg` charcoal, `--grid-opacity 0.8`, `--aurora-intensity 0.15`) live in `:root` (globals.css), which is now the sole source (the dev TweaksPanel that mirrored them has been removed).
 
 ### Brand caps
 
@@ -267,9 +267,9 @@ To retheme story_tag colors (or invert which tag is "danger" coded), edit `TAG_S
 
 [components/motion/easing.ts](web/components/motion/easing.ts) exports both. `EASING` (cubic `[0.25,0.1,0.25,1]`) is the **editorial** track: body copy, section reveals, anything that must read as credible. `SPRING` (stiffness 120 / damping 18 / mass 1.1) and `SPRING_SNAPPY` are the **playful** track, applied only to: background, chart state transitions, list reorder, the bet interactions. The spring is **additive — never swap `EASING` globally.** Every motion surface has a `prefers-reduced-motion` settled fallback (no pulses/springs/autoplay).
 
-### Fluid background + dev TweaksPanel
+### Fluid background
 
-[components/fluid-background.tsx](web/components/fluid-background.tsx) is an app-wide z-0 layer (blurred drifting blobs that ease toward the cursor) mounted in the root layout. It reads `--aurora-intensity` / `--grid-opacity` and blooms in on the `hyp3:intro-dismissed` event from the loader. `TweaksPanel` is **dev-only** (`process.env.NODE_ENV === "development"` gate in layout) and writes those CSS vars + the `[data-bg-grid]` class live. Ambient rAF loops (fluid bg, `spectrum-current`) are **capped to ~30fps** and pause on `visibilitychange` — keep that cap (halves blurred-layer recompositing).
+[components/fluid-background.tsx](web/components/fluid-background.tsx) is an app-wide z-0 layer (blurred drifting blobs that ease toward the cursor) mounted in the root layout. It reads `--aurora-intensity` / `--grid-opacity` (defaults in `:root`) and blooms in on the `hyp3:intro-dismissed` event from the loader. Ambient rAF loops (fluid bg, `spectrum-current`) are **capped to ~30fps** and pause on `visibilitychange` — keep that cap (halves blurred-layer recompositing). (A dev-only `TweaksPanel` that wrote those CSS vars + the `[data-bg-grid]` class live was removed; the vars now take their `:root` defaults.)
 
 ### Four views, one 2D/3D lens convention
 
@@ -279,7 +279,7 @@ The four routes (`/divergent /scatter /timeline /bracket`) each render `<AppShel
 
 ### Scope is a continuous slider synced to the discrete `gapMode`
 
-Divergent replaces the tournament/season toggle with a 0→1 `scope` slider (`gap-chart.tsx`); app-shell keeps it in lockstep with the global `gapMode` (crossing 0.5 flips the mode, so filters/counts/URL/other views stay coherent). Bars interpolate gap/width/side/color between the two ends via `projectTeamForMode`; the axis scale spans BOTH modes so bars don't rescale mid-scrub. The binary scope toggle now lives **only in the console nav** (removed from filters).
+Divergent replaces the tournament/season toggle with a 0→1 `scope` slider (`gap-chart.tsx`); app-shell keeps it in lockstep with the global `gapMode` (crossing 0.5 flips the mode, so filters/counts/URL/other views stay coherent). Bars interpolate gap/width/side/color between the two ends via `projectTeamForMode`; the axis scale spans BOTH modes so bars don't rescale mid-scrub. The binary scope toggle lives in the **filter bar** (`filters.tsx`, `showScope`) for scatter/timeline/bracket; it's hidden on divergent (the slider replaces it) and absent from the nav entirely.
 
 ### The bet spine + URL portability
 

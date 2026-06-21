@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Menu, X } from "lucide-react";
 
-import { Dataset, GapMode } from "@/lib/data";
+import { Dataset } from "@/lib/data";
 
 // Module-scope flag flipped by a nav click; the freshly-mounted TopNav on
 // the destination route consumes it. Each route renders its own AppShell, so
@@ -29,42 +30,20 @@ const CHANNELS: Channel[] = [
 
 type Props = {
   dataset: Dataset;
-  // Interactive props are present on the data views (AppShell). The marketing
-  // landing ("/") mounts the nav for navigation only, so they're optional:
-  // without setMode the Scope toggle is omitted; year/signal fall back to the
-  // bundled dataset.
-  mode?: GapMode;
-  setMode?: (m: GapMode) => void;
+  // Year-stepper props are present on the data views (AppShell). The landing
+  // ("/") mounts the nav for navigation only, so they're optional and fall back
+  // to the bundled dataset. The tournament/season scope toggle lives in the
+  // filter bar (see filters.tsx), not the nav.
   years?: number[];
   currentYear?: number;
   onYear?: (year: number) => void;
 };
 
-// Deterministic oscilloscope trace (pure sines, no RNG, so SSR === CSR). The
-// amplitude is driven by the active channel's signal.
-function wavePath(amp: number, seed: number, w = 800, h = 44): string {
-  const n = 64;
-  const mid = h / 2;
-  const pts: string[] = [];
-  for (let i = 0; i <= n; i++) {
-    const x = (i / n) * w;
-    const t = i * 0.5 + seed;
-    const y =
-      mid +
-      Math.sin(t) * 6 * amp +
-      Math.sin(t * 2.3 + seed) * 4 * amp +
-      Math.sin(t * 5.1 + seed * 2) * 2.2 * amp;
-    pts.push(`${x.toFixed(1)},${Math.max(3, Math.min(h - 3, y)).toFixed(1)}`);
-  }
-  return pts.join(" ");
-}
-
-export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: Props) {
+export function TopNav({ dataset, years, currentYear, onYear }: Props) {
   const pathname = usePathname();
   const headerRef = useRef<HTMLElement>(null);
 
   // Resolved values so the nav works with or without the interactive props.
-  const effMode: GapMode = mode ?? "tournament";
   const effYears = years ?? [dataset.metadata.tournament_year];
   const effYear = currentYear ?? dataset.metadata.tournament_year;
 
@@ -120,42 +99,14 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
     return () => ro.disconnect();
   }, [activeIndex]);
 
-  // Per-channel signal readout from real dataset values (mode-aware).
-  const signal = useMemo(() => {
-    const teams = dataset.teams;
-    const gapOf = (t: (typeof teams)[number]) =>
-      effMode === "season" ? t.season_gap : t.gap;
-    const tagOf = (t: (typeof teams)[number]) =>
-      effMode === "season" ? t.season_story_tag : t.story_tag;
-    switch (activeIndex) {
-      case 1: {
-        const n = teams.filter((t) => tagOf(t) !== "as_expected").length;
-        return { label: "OFF DIAGONAL", value: `${n} TEAMS`, amp: 0.6 };
-      }
-      case 2: {
-        let mx = 0;
-        for (const t of teams) if (t.hype_acceleration > mx) mx = t.hype_acceleration;
-        return { label: "PEAK SURGE", value: `${mx.toFixed(1)}× ACCEL`, amp: 1.2 };
-      }
-      case 3: {
-        const n = teams.filter((t) => t.seed >= 11 && t.wins >= 1).length;
-        return { label: "UPSETS", value: `${n} TEAMS`, amp: 0.7 };
-      }
-      default: {
-        let mn = Infinity;
-        let mx = -Infinity;
-        for (const t of teams) {
-          const g = gapOf(t);
-          if (g < mn) mn = g;
-          if (g > mx) mx = g;
-        }
-        return { label: "GAP RANGE", value: `${mn} / +${mx}`, amp: 0.95 };
-      }
-    }
-  }, [dataset, effMode, activeIndex]);
-
   const yearIdx = effYears.indexOf(effYear);
-  const isSeason = effMode === "season";
+
+  // Mobile menu (below lg the inline console collapses to a hamburger drawer).
+  // Close it whenever the route changes.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header
@@ -165,101 +116,56 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
     >
       <nav
         aria-label="HYP3 console"
-        className="cn-console mx-auto flex max-w-[1440px] flex-wrap items-stretch gap-3 rounded-[18px] border border-border-hi px-3 py-2.5 sm:gap-4 sm:px-4 lg:gap-5"
+        className="cn-console mx-auto flex max-w-[1440px] flex-col rounded-[18px] border border-border-hi px-3 py-2.5 sm:px-4"
       >
         <span aria-hidden className="cn-screw" style={{ top: 9, left: 9 }} />
         <span aria-hidden className="cn-screw" style={{ top: 9, right: 9 }} />
         <span aria-hidden className="cn-screw" style={{ bottom: 9, left: 9 }} />
         <span aria-hidden className="cn-screw" style={{ bottom: 9, right: 9 }} />
 
-        {/* Logo + year, nudged right (no power LED, no group label) */}
-        <div className="flex flex-col justify-center gap-1.5 pl-2 sm:pl-3">
+        {/* TOP ROW — logo always; year/channels/status inline on lg+; hamburger
+            on the right below lg. */}
+        <div className="flex items-center gap-3 sm:gap-4 lg:gap-5">
+          {/* Logo in a bordered cell + wordmark */}
           <Link
             href="/"
             aria-label="HYP3 home"
-            className="flex shrink-0 items-center gap-2.5"
+            className="flex shrink-0 items-center gap-2.5 pl-1 sm:pl-2"
           >
-            <Image
-              src="/media/hype-logo.svg"
-              alt=""
-              width={39}
-              height={41}
-              priority
-              className="h-7 w-auto"
-            />
+            <span className="flex size-10 items-center justify-center rounded-[10px] border border-core-bright/50 bg-bg-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <Image
+                src="/media/hype-logo.svg"
+                alt=""
+                width={39}
+                height={41}
+                priority
+                className="h-[18px] w-auto"
+              />
+            </span>
             <span className="font-display text-[22px] font-black uppercase leading-none tracking-[0.03em] text-ink">
               HYP<span className="text-core-bright">3</span>
             </span>
           </Link>
-          {/* Year, formatted under the logo */}
-          <div className="cn-track inline-flex w-fit items-center gap-2 rounded-[10px] px-2.5 py-1">
-            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-3">
-              Year
-            </span>
-            {effYears.length > 1 ? (
-              <>
-                <Step label="Previous year" disabled={yearIdx <= 0} onClick={() => onYear?.(effYears[yearIdx - 1])}>
-                  −
-                </Step>
-                <span className="min-w-[42px] text-center font-mono text-[14px] tabular-nums text-ink">
-                  {effYear}
-                </span>
-                <Step label="Next year" disabled={yearIdx >= effYears.length - 1} onClick={() => onYear?.(effYears[yearIdx + 1])}>
-                  +
-                </Step>
-              </>
-            ) : (
-              <span className="font-mono text-[14px] tabular-nums text-ink">{effYear}</span>
-            )}
-          </div>
-        </div>
 
-        <span aria-hidden className="cn-divider hidden lg:block" />
+          {/* Year pill — desktop only (mobile shows it inside the drawer).
+              YearControl's base sets no display utility, so `hidden lg:inline-flex`
+              here doesn't clash with a hardcoded flex. */}
+          <YearControl
+            className="hidden lg:inline-flex"
+            effYears={effYears}
+            effYear={effYear}
+            yearIdx={yearIdx}
+            onYear={onYear}
+          />
 
-        {setMode && (
-          <>
-            {/* Scope */}
-            <Group label="Scope">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isSeason}
-                aria-label="Scope: tournament or season"
-                onClick={() => setMode(isSeason ? "tournament" : "season")}
-                className="cn-track relative grid grid-cols-2 items-stretch rounded-[12px] p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
-              >
-                <span
-                  aria-hidden
-                  className="cn-knob absolute left-1 top-1 rounded-[8px]"
-                  style={{
-                    height: "calc(100% - 8px)",
-                    width: "calc(50% - 4px)",
-                    transform: isSeason ? "translateX(100%)" : "none",
-                  }}
-                />
-                <span
-                  className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink-2" : "text-ink"}`}
-                >
-                  Tourn
-                </span>
-                <span
-                  className={`relative z-[1] whitespace-nowrap px-3.5 py-2 text-center font-mono text-[11px] uppercase tracking-[0.12em] transition-colors md:py-1.5 ${isSeason ? "text-ink" : "text-ink-2"}`}
-                >
-                  Season
-                </span>
-              </button>
-            </Group>
-            <span aria-hidden className="cn-divider hidden lg:block" />
-          </>
-        )}
+          <span aria-hidden className="cn-divider hidden lg:block" />
 
-        {/* Channel — full-width own line below lg so the horizontal scroller is
-            bounded by the container (no clipping); inline on desktop. */}
-        <Group label="Channel" className="min-w-0 w-full lg:w-auto">
-          <div className="-mx-1 max-w-full overflow-x-auto px-1 no-scrollbar">
+          {/* Channel — horizontal tabs (roman · dot · name), centered. Desktop
+              (lg+) only; below lg it lives in the hamburger drawer. */}
+          <div className="hidden min-w-0 lg:flex lg:flex-1 lg:justify-center">
             <div
               ref={trackRef}
-              className="cn-track relative flex w-max gap-1.5 rounded-[13px] p-[5px]"
+              className="cn-track relative flex w-max items-stretch gap-1 rounded-[12px] p-[5px]"
             >
               {sel && (
                 <span
@@ -284,19 +190,19 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
                     ref={(el) => {
                       btnRefs.current[i] = el;
                     }}
-                    className="relative z-[1] flex min-h-11 min-w-[88px] flex-col items-start gap-1 rounded-[9px] px-3.5 py-2 transition-transform duration-200 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 md:min-h-9"
+                    className="relative z-[1] flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-[9px] px-4 transition-transform duration-200 hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60"
                   >
                     <span
-                      aria-hidden
-                      className={`absolute right-2.5 top-2 size-1.5 rounded-full cn-led ${active ? "cn-led-on" : ""}`}
-                    />
-                    <span
-                      className={`font-mono text-[11px] tracking-[0.1em] ${active ? "text-core-bright" : "text-ink-2"}`}
+                      className={`font-mono text-[12px] tracking-[0.12em] ${active ? "text-ink-2" : "text-ink-3"}`}
                     >
                       {c.no}
                     </span>
                     <span
-                      className={`font-mono text-[12px] uppercase tracking-[0.14em] ${active ? "text-ink" : "text-ink-1"}`}
+                      aria-hidden
+                      className={`size-1.5 shrink-0 rounded-full cn-led ${active ? "cn-led-on" : ""}`}
+                    />
+                    <span
+                      className={`font-mono text-[12px] uppercase tracking-[0.14em] ${active ? "text-ink" : "text-ink-2"}`}
                     >
                       {c.nm}
                     </span>
@@ -305,43 +211,148 @@ export function TopNav({ dataset, mode, setMode, years, currentYear, onYear }: P
               })}
             </div>
           </div>
-        </Group>
 
-        <span aria-hidden className="cn-divider hidden xl:block" />
+          <span aria-hidden className="cn-divider hidden xl:block" />
 
-        {/* Signal */}
-        <Group label="Signal" className="hidden min-w-[200px] flex-1 xl:flex">
-          <div className="cn-scope relative h-[54px] overflow-hidden rounded-[10px]">
-            <div aria-hidden className="cn-scope-grid absolute inset-0" />
-            <svg
-              viewBox="0 0 800 44"
-              preserveAspectRatio="none"
-              aria-hidden
-              className="absolute inset-0 h-full w-[200%]"
-            >
-              <polyline
-                className="cn-wave"
-                fill="none"
-                stroke="rgba(102,231,216,.28)"
-                strokeWidth="1.5"
-                points={wavePath(signal.amp * 0.7, 9)}
-              />
-              <polyline
-                className="cn-wave"
-                fill="none"
-                stroke="var(--underhyped)"
-                strokeWidth="1.6"
-                points={wavePath(signal.amp, 1)}
-              />
-            </svg>
+          {/* System status + latency — decorative readouts, xl+ only */}
+          <div className="hidden items-center gap-6 pr-1 xl:flex">
+            <Group label="System status">
+              <span className="font-mono text-[13px] uppercase tracking-[0.12em] text-core-bright">
+                Optimized
+              </span>
+            </Group>
+            <Group label="Latency">
+              <span className="font-mono text-[15px] tabular-nums tracking-[0.04em] text-ink">
+                0.02ms
+              </span>
+            </Group>
           </div>
-          <div className="flex items-center justify-between px-0.5 font-mono text-[11px] tracking-[0.08em] text-ink-2">
-            <span>{signal.label}</span>
-            <b className="font-medium text-underhyped">{signal.value}</b>
+
+          {/* Hamburger — below lg, pushed to the right edge */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-controls="hyp3-mobile-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="cn-track ml-auto flex size-10 shrink-0 items-center justify-center rounded-[10px] text-ink transition-colors hover:text-core-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 lg:hidden"
+          >
+            {menuOpen ? (
+              <X aria-hidden className="size-5" />
+            ) : (
+              <Menu aria-hidden className="size-5" />
+            )}
+          </button>
+        </div>
+
+        {/* MOBILE DRAWER — below lg, expands from the hamburger. */}
+        <div
+          id="hyp3-mobile-menu"
+          aria-hidden={!menuOpen}
+          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out lg:hidden ${
+            menuOpen
+              ? "grid-rows-[1fr] opacity-100"
+              : "pointer-events-none grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="mt-3 border-t border-border pt-3.5">
+              {/* Year + decorative mode readout */}
+              <div className="flex items-center justify-between gap-3">
+                <YearControl
+                  className="inline-flex"
+                  effYears={effYears}
+                  effYear={effYear}
+                  yearIdx={yearIdx}
+                  onYear={onYear}
+                />
+                <span className="text-right font-mono text-[12px] uppercase tracking-[0.14em] text-core-bright">
+                  <span className="text-core">///</span> Mode: Navigation
+                </span>
+              </div>
+
+              {/* Channel list — full-width vertical rows */}
+              <div className="mt-3.5 flex flex-col gap-1.5">
+                {CHANNELS.map((c, i) => {
+                  const active = i === activeIndex;
+                  return (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      scroll={false}
+                      onClick={() => {
+                        handleTabClick(c.href);
+                        setMenuOpen(false);
+                      }}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex items-center gap-4 rounded-[12px] border px-4 py-3.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-core-bright/60 ${
+                        active
+                          ? "cn-sel"
+                          : "border-transparent bg-[rgba(255,255,255,0.025)] hover:bg-[rgba(255,255,255,0.05)]"
+                      }`}
+                    >
+                      <span
+                        className={`w-5 shrink-0 font-mono text-[15px] tracking-[0.1em] ${active ? "text-core-bright" : "text-ink-3"}`}
+                      >
+                        {c.no}
+                      </span>
+                      <span
+                        className={`flex-1 font-mono text-[16px] uppercase tracking-[0.12em] ${active ? "text-ink" : "text-ink-2"}`}
+                      >
+                        {c.nm}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`size-2 shrink-0 rounded-full cn-led ${active ? "cn-led-on" : ""}`}
+                      />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </Group>
+        </div>
       </nav>
     </header>
+  );
+}
+
+function YearControl({
+  effYears,
+  effYear,
+  yearIdx,
+  onYear,
+  className,
+}: {
+  effYears: number[];
+  effYear: number;
+  yearIdx: number;
+  onYear?: (year: number) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`cn-track h-10 w-fit items-center gap-2.5 rounded-[10px] px-3 ${className ?? ""}`}
+    >
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">
+        Year
+      </span>
+      {effYears.length > 1 ? (
+        <>
+          <Step label="Previous year" disabled={yearIdx <= 0} onClick={() => onYear?.(effYears[yearIdx - 1])}>
+            −
+          </Step>
+          <span className="min-w-[42px] text-center font-mono text-[15px] tabular-nums text-ink">
+            {effYear}
+          </span>
+          <Step label="Next year" disabled={yearIdx >= effYears.length - 1} onClick={() => onYear?.(effYears[yearIdx + 1])}>
+            +
+          </Step>
+        </>
+      ) : (
+        <span className="font-mono text-[15px] tabular-nums text-ink">{effYear}</span>
+      )}
+    </div>
   );
 }
 

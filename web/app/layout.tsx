@@ -4,7 +4,6 @@ import "./globals.css";
 import { FloatingSearch } from "@/components/floating-search";
 import { FluidBackground } from "@/components/fluid-background";
 import { IntroLoader } from "@/components/intro-loader";
-import { TweaksPanel } from "@/components/tweaks-panel";
 
 // Rubik is the primary UI / body face, served from Google Fonts via next/font
 // (self-optimized + preloaded). It drives --font-sans in globals.css.
@@ -38,7 +37,6 @@ export default function RootLayout({
           {children}
         </div>
         <FloatingSearch />
-        {process.env.NODE_ENV === "development" && <TweaksPanel />}
       </body>
     </html>
   );

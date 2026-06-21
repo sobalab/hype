@@ -182,8 +182,8 @@ export function FluidBackground() {
           />
         ))}
       </div>
-      {/* Global texture layer. TweaksPanel toggles dots/lines/off and drives
-          --grid-opacity; starts as dots to match the prior hero treatment. */}
+      {/* Global texture layer. Driven by `--grid-opacity` / the `[data-bg-grid]`
+          class; renders as dots to match the prior hero treatment. */}
       <div data-bg-grid className="fluid-grid bg-dotgrid" />
     </div>
   );

@@ -441,8 +441,6 @@ export function AppShell({ data, view }: Props) {
 
       <TopNav
         dataset={dataset}
-        mode={gapMode}
-        setMode={setGapMode}
         years={YEARS}
         currentYear={dataset.metadata.tournament_year}
         onYear={onYear}
@@ -457,7 +455,7 @@ export function AppShell({ data, view }: Props) {
           selectedRound={selectedRound}
           tagCounts={counts}
           showRoundFilter={view !== "bracket" && view !== "timeline"}
-          showScope={false}
+          showScope={view !== "gap"}
           onToggleTag={onToggleTag}
           onSetRegion={setSelectedRegion}
           onSetRound={setSelectedRound}

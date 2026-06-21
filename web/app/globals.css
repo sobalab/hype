@@ -329,8 +329,8 @@
   transition: background 0.3s, box-shadow 0.3s;
 }
 .cn-led-on {
-  background: var(--live);
-  box-shadow: 0 0 8px var(--live), 0 0 14px rgba(255, 122, 61, 0.6);
+  background: var(--core-bright);
+  box-shadow: 0 0 8px var(--core-bright), 0 0 14px rgba(114, 184, 255, 0.6);
   animation: cn-breathe 1.8s ease-in-out infinite;
 }
 .cn-pwr {
