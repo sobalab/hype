@@ -244,7 +244,7 @@ export function AboutSection({ data }: { data: Dataset }) {
               />
             </div>
             <div className="mt-5 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
-              e.g. {ex.team} <span className="text-ink-2">·</span> {data.metadata.tournament_year}
+              e.g. {ex.team}, {data.metadata.tournament_year}
             </div>
           </div>
         )}

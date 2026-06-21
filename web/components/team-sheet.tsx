@@ -260,9 +260,7 @@ function TeamModalBody({
           <span className="tabular-nums text-core-bright">
             #{String(team.seed).padStart(2, "0")} SEED
           </span>
-          <Dot />
           <span>{team.region} Region</span>
-          <Dot />
           <span className="tabular-nums">
             {team.season_wins}–{team.season_losses}
           </span>
@@ -335,10 +333,6 @@ function TeamModalBody({
       />
     </div>
   );
-}
-
-function Dot() {
-  return <span aria-hidden className="text-ink-3">·</span>;
 }
 
 function ChartBlock({

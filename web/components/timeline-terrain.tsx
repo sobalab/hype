@@ -454,7 +454,7 @@ export function TimelineTerrain({ teams, mode }: { teams: Team[]; mode: GapMode 
       </div>
 
       <div className="pointer-events-none absolute bottom-3 right-3 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">
-        Orbit · scroll zoom · right-drag pan
+        Orbit, scroll to zoom, right-drag to pan
       </div>
     </div>
   );

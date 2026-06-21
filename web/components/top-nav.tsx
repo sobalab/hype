@@ -158,7 +158,7 @@ export function TopNav({ dataset, years, currentYear, onYear }: Props) {
 
           <span aria-hidden className="cn-divider hidden lg:block" />
 
-          {/* Channel — horizontal tabs (roman · dot · name), centered. Desktop
+          {/* Channel — horizontal tabs (roman, dot, name), centered. Desktop
               (lg+) only; below lg it lives in the hamburger drawer. */}
           <div className="hidden min-w-0 lg:flex lg:flex-1 lg:justify-center">
             <div

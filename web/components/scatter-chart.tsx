@@ -241,7 +241,6 @@ export function ScatterChartView({ teams, value, onCommit, selectedTeam, onSelec
         <div>
           <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
             <span className="text-core-bright">02</span>
-            <span aria-hidden className="leading-none text-ink-3">·</span>
             <span className="text-ink-1">The Scatter</span>
           </div>
           <h2

@@ -94,7 +94,6 @@ export function GapChart({
         <div>
           <div className="mb-4 flex items-center justify-center gap-2 font-mono text-sm uppercase tracking-[0.14em] text-ink-2">
             <span className="text-core-bright">01</span>
-            <span aria-hidden className="leading-none text-ink-3">·</span>
             <span className="text-ink-1">The Diverging Gap</span>
           </div>
           <h2
